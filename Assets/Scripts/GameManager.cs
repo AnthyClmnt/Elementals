@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -14,7 +12,7 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        ChangeGameState(GameState.InitialiseGame);
+        ChangeGameState(GameState.InitialiseGrid);
     }
 
     public void ChangeGameState(GameState newState) 
@@ -22,9 +20,21 @@ public class GameManager : MonoBehaviour
         GameState = newState;
         switch(newState)
         {
-            case GameState.InitialiseGame:
+            case GameState.InitialiseGrid:
                 GridManager.Instance.InitialiseGrid();
                 break;
+
+            case GameState.InitialiseCards:
+                CardManager.Instance.GenerateHands();
+                break;
+
+            case GameState.HeroesTurn:
+                break;
+
+            case GameState.EnemiesTurn:
+                Debug.Log("enemies turn");
+                ChangeGameState(GameState.HeroesTurn);
+                break;
         }
-    } 
+    }
 }

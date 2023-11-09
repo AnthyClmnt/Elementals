@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
@@ -5,10 +6,11 @@ public class GridManager : MonoBehaviour
     public static GridManager Instance;
 
     [SerializeField] private int gridWidth, gridHeight;
-    [SerializeField] private Tile tile;
-    [SerializeField] private Transform mainCamera;
+    [SerializeField] private Tile[] tiles;
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private Canvas cardCanvas;
 
-    private TileData[ , ] tileData;
+    public Dictionary<Vector2Int, TileData> tileData;
 
     private void Awake()
     {
@@ -17,17 +19,27 @@ public class GridManager : MonoBehaviour
 
     public void InitialiseGrid()
     {
-        tileData = new TileData[gridWidth, gridHeight];
+        tileData = new Dictionary<Vector2Int, TileData>();
         GenerateGrid();
-        CenterCamera();
+        PositionCamera();
+        GameManager.Instance.ChangeGameState(GameState.InitialiseCards);
     }
 
-    private void CenterCamera()
+    private void PositionCamera()
     {
-        float centerX = gridWidth / 2 - .5f;
-        float centerY = gridHeight / 2f - .5f;
+        float cameraHalfWidth = mainCamera.orthographicSize * mainCamera.aspect;
+        float cameraHalfHeight = mainCamera.orthographicSize;
 
-        mainCamera.transform.position = new Vector3(centerX, centerY, -10f);
+        float cameraX = cameraHalfWidth - 1;
+        float cameraY = gridHeight - 1 - cameraHalfHeight + 1;
+
+        mainCamera.transform.position = new Vector3(cameraX, cameraY, -10f);
+
+        Vector3 cardCanvasPos = mainCamera.transform.position;
+        cardCanvasPos.z = -1;
+        cardCanvasPos.y -= cameraHalfHeight - 1.75f;
+
+        cardCanvas.transform.position = cardCanvasPos;
     }
 
     private void GenerateGrid()
@@ -36,27 +48,64 @@ public class GridManager : MonoBehaviour
         {
             for (int y = 0; y < gridHeight; y++)
             {
-                Vector3 tilePos = new(x, y, 0);
-                Tile newTile = Instantiate(tile, tilePos, Quaternion.identity);
+                Vector3Int tilePos = new(x, y, 0);
+
+                bool isGrass = Random.value > .3;
+
+                if(x < 2 || x >= gridWidth - 2)
+                {
+                    isGrass = true;
+                }
+
+                Tile selectedTile = isGrass ? tiles[0] : Random.value > .5 ? tiles[1] : tiles[2];
+
+                Tile newTile = Instantiate(selectedTile, tilePos, Quaternion.identity);
 
                 newTile.name = $"{x},{y}";
                 newTile.transform.parent = this.gameObject.transform;
 
-                newTile.SetColour((x + y) % 2 == 0);
-
-                tileData[x, y] = new TileData { tile = newTile, position = tilePos };
+                if (isGrass) {
+                    newTile.SetColour((x + y) % 2 == 0);
+                }
+                tileData.Add(new Vector2Int(x, y), new TileData { tile = newTile, gridLocation = (Vector2Int)tilePos, walkable = isGrass });
             }
         }
     }
-
-    public Tile GetTileData(Vector2 mousePos)
+    
+    public void SetCharacterOnTile(Character character, Vector2Int gridLocaton)
     {
-        int x = Mathf.RoundToInt((mousePos.x));
-        int y= Mathf.RoundToInt((mousePos.y));
-
-        if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight)
+        if (tileData.ContainsKey(gridLocaton))
         {
-            return tileData[x, y].tile;
+            TileData tile = tileData[gridLocaton];
+
+            tile.character = character;
+
+            tileData[gridLocaton] = tile;
+        }
+    }
+
+    public void RemoveCharacterFromTile(Vector2Int gridLocaton)
+    {
+        if (tileData.ContainsKey(gridLocaton))
+        {
+            TileData OrigionalTile = tileData[gridLocaton];
+
+            OrigionalTile.character = null;
+            TileData editedTile = new TileData { tile = OrigionalTile.tile, gridLocation = OrigionalTile.gridLocation, walkable = OrigionalTile.walkable };
+
+            tileData[gridLocaton] = editedTile;
+        }
+    }
+
+    public TileData? GetTileData(Vector2 pos)
+    {
+        int x = Mathf.RoundToInt((pos.x));
+        int y= Mathf.RoundToInt((pos.y));
+        Vector2Int coord = new(x, y);
+
+        if (tileData.TryGetValue(coord, out TileData tile))
+        {
+            return tile;
         }
 
         return null;
