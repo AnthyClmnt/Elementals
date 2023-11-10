@@ -63,7 +63,7 @@ public class InputManager : MonoBehaviour
 
             if (Input.GetMouseButtonDown(1))
             {
-                if (startPosTile.character != null && rangeTiles.Contains(focusedTile))
+                if (startPosTile.character != null && focusedTile.character == null && rangeTiles.Contains(focusedTile))
                 {
                     path = pathfinding.FindPath(startPosTile, focusedTile);
                     pathCharacter = startPosTile.character;
@@ -90,6 +90,13 @@ public class InputManager : MonoBehaviour
     private void ShowRange(TileData tile, Character character)
     {
         rangeTiles = rangeFinding.GetRangeTiles(tile, character.characterCard.range);
+
+        Debug.Log(character.characterCard.name);
+        Debug.Log(character.characterCard.description);
+        Debug.Log("----------");
+        Debug.Log(character.characterCard.attack);
+        Debug.Log(character.characterCard.range);
+        Debug.Log(character.characterCard.health);
 
         foreach (TileData rangeTile in rangeTiles)
         {

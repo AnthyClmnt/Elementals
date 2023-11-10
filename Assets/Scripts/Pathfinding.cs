@@ -6,6 +6,11 @@ public class Pathfinding
 {
     public List<TileData> FindPath(TileData start, TileData destination)
     {
+        if (destination.character != null)
+        {
+            return new List<TileData>();
+        }
+
         List<TileData> openList = new();
         List<TileData> closedList = new();
 

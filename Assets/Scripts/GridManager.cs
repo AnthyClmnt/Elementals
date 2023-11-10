@@ -8,7 +8,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private int gridWidth, gridHeight;
     [SerializeField] private Tile[] tiles;
     [SerializeField] private Camera mainCamera;
-    [SerializeField] private Canvas cardCanvas;
+    [SerializeField] private Canvas cardCanvas, statsCanvas;
 
     public Dictionary<Vector2Int, TileData> tileData;
 
@@ -40,6 +40,13 @@ public class GridManager : MonoBehaviour
         cardCanvasPos.y -= cameraHalfHeight - 1.75f;
 
         cardCanvas.transform.position = cardCanvasPos;
+
+        Vector3 statsCanvasPos = mainCamera.transform.position;
+        statsCanvasPos.z = -1;
+        statsCanvasPos.y += cameraHalfHeight;
+        statsCanvasPos.x += cameraHalfWidth;
+
+        statsCanvas.transform.position = statsCanvasPos;
     }
 
     private void GenerateGrid()
