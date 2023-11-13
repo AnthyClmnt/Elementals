@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
@@ -32,8 +33,17 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.EnemiesTurn:
-                Debug.Log("enemies turn");
-                ChangeGameState(GameState.HeroesTurn);
+                //ChangeGameState(GameState.HeroesTurn);
+                break;
+
+            case GameState.HeroWin:
+                Debug.Log("wooo hero won");
+                SceneManager.LoadScene(0);
+                break;
+
+            case GameState.EnemyWin:
+                Debug.Log("booo enemy won");
+                SceneManager.LoadScene(0);
                 break;
         }
     }

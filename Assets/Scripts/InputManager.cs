@@ -14,6 +14,8 @@ public class InputManager : MonoBehaviour
     private List<TileData> rangeTiles;
     private Character pathCharacter;
 
+    private Character selectedCharacter;
+
     private bool showingRange = false;
     private TileData startPosTile;
 
@@ -23,6 +25,7 @@ public class InputManager : MonoBehaviour
     {
         pathfinding = new Pathfinding();
         rangeFinding = new RangeFinding();
+
         path = new List<TileData>();
     }
 
@@ -35,25 +38,48 @@ public class InputManager : MonoBehaviour
 
             if (Input.GetMouseButtonDown(0))
             {
-                if (focusedTile.character != null)
+                if (focusedTile.character != null && focusedTile.character.type == MobType.Hero)
                 {
                     if (showingRange)
                     {
                         HideRange();
+                        selectedCharacter = null;
+                        UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
                         showingRange = false;
                     }
                     else
                     {
                         ShowRange(focusedTile, focusedTile.character);
+                        selectedCharacter = focusedTile.character;
+                        UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
                         showingRange = true;
                     }
 
                     startPosTile = focusedTile;
                 }
+
+                else if (showingRange && rangeTiles.Contains(focusedTile))
+                {
+                    if (focusedTile.shrineLocation && focusedTile.gridLocation.x != 0)
+                    {
+                        HideRange();
+                        UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
+                        focusedTile.shrine.TakeDamage(startPosTile.character.characterCard.attack);
+                        EndUserTurn();
+                    }
+                    else if (focusedTile.character && focusedTile.character.type == MobType.Enemy)
+                    {
+                        HideRange();
+                        UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
+                        focusedTile.character.TakeDamage(selectedCharacter.characterCard.attack);
+                        EndUserTurn();
+                    }
+
+                }
                 else
                 {
                     Card? selectedCard = CardManager.Instance.GetSelectedCard();
-                    if (selectedCard.HasValue && focusedTile.gridLocation.x < 2)
+                    if (selectedCard.HasValue && focusedTile.gridLocation.x < 2 && !focusedTile.shrineLocation && focusedTile.character == null)
                     {
                         SpawnInCharacter(focusedTile, selectedCard.Value);
                         EndUserTurn();
@@ -63,13 +89,16 @@ public class InputManager : MonoBehaviour
 
             if (Input.GetMouseButtonDown(1))
             {
-                if (startPosTile.character != null && focusedTile.character == null && rangeTiles.Contains(focusedTile))
+                if (startPosTile.character != null && focusedTile.character == null && rangeTiles.Contains(focusedTile) && showingRange && !focusedTile.shrineLocation)
                 {
-                    path = pathfinding.FindPath(startPosTile, focusedTile);
+                    path = pathfinding.FindPath(startPosTile, focusedTile, startPosTile.character.characterCard.cardType);
                     pathCharacter = startPosTile.character;
 
-                    GridManager.Instance.RemoveCharacterFromTile(pathCharacter.standingOnTile.gridLocation);
-                    EndUserTurn();
+                    if (path.Count > 0)
+                    {
+                        GridManager.Instance.RemoveCharacterFromTile(pathCharacter.standingOnTile.gridLocation);
+                        UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
+                    }
                 }
             }
         }
@@ -84,19 +113,16 @@ public class InputManager : MonoBehaviour
 
     private void EndUserTurn()
     {
-        GameManager.Instance.ChangeGameState(GameState.EnemiesTurn);
+        if (GameManager.Instance.GameState != GameState.EnemyWin && GameManager.Instance.GameState != GameState.HeroWin)
+        {
+            GameManager.Instance.ChangeGameState(GameState.EnemiesTurn);
+        }
+        
     }
 
     private void ShowRange(TileData tile, Character character)
     {
-        rangeTiles = rangeFinding.GetRangeTiles(tile, character.characterCard.range);
-
-        Debug.Log(character.characterCard.name);
-        Debug.Log(character.characterCard.description);
-        Debug.Log("----------");
-        Debug.Log(character.characterCard.attack);
-        Debug.Log(character.characterCard.range);
-        Debug.Log(character.characterCard.health);
+        rangeTiles = rangeFinding.GetRangeTiles(tile, character.characterCard.range, character.characterCard.cardType);
 
         foreach (TileData rangeTile in rangeTiles)
         {
@@ -118,17 +144,7 @@ public class InputManager : MonoBehaviour
 
     private void SpawnInCharacter(TileData tile, Card card)
     {
-        Character character = Instantiate(characterPrefabs[(int)card.cardType]).GetComponent<Character>();
-        character.transform.position = new Vector3(tile.gridLocation.x, tile.gridLocation.y, -2f);
-
-        character.standingOnTile = tile;
-        character.characterCard = card;
-
-        character.transform.SetParent(container.transform);
-        character.name = character.characterCard.name;
-
-        GridManager.Instance.SetCharacterOnTile(character, tile.gridLocation);
-        CardManager.Instance.PlayCard(card);
+        CardManager.Instance.SpawnInCharacter(tile, card);
     }
 
     private void MoveAlongPath()
@@ -152,6 +168,7 @@ public class InputManager : MonoBehaviour
         if (path.Count == 0)
         {
             isMoving = false;
+            EndUserTurn();
         }
     }
 

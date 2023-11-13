@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Pathfinding
 {
-    public List<TileData> FindPath(TileData start, TileData destination)
+    public List<TileData> FindPath(TileData start, TileData destination, CardType cardType)
     {
         if (destination.character != null)
         {
@@ -30,23 +30,25 @@ public class Pathfinding
 
             foreach( TileData tile in GetNeighbourTiles(currentTile))
             {
-                if(!tile.walkable || closedList.Contains(tile)) 
+                if((tile.walkable || (tile.tile.tileType == TileType.Water && cardType == CardType.Water)) && !closedList.Contains(tile))
+                {
+                    tile.tile.G = GetDistanceCost(start, tile);
+                    tile.tile.H = GetDistanceCost(destination, tile);
+
+                    tile.tile.parentTile = currentTile;
+
+                    if (!openList.Contains(tile))
+                    {
+                        openList.Add(tile);
+                    }
+                } else
                 {
                     continue;
-                }
-
-                tile.tile.G = GetDistanceCost(start, tile);
-                tile.tile.H = GetDistanceCost(destination, tile);
-
-                tile.tile.parentTile = currentTile;
-
-                if(!openList.Contains(tile))
-                {
-                    openList.Add(tile);
                 }
             }
         }
 
+        Debug.Log("hi");
         return new List<TileData>();
     }
 

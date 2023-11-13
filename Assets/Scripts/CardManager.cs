@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 
 public class CardManager : MonoBehaviour
@@ -7,7 +8,9 @@ public class CardManager : MonoBehaviour
     public static CardManager Instance;
 
     public GameObject[] cardPrefabs;
+    public GameObject[] characterPrefabs;
     public GameObject[] slots;
+    public GameObject characterContainer;
 
     public int handSize;
 
@@ -96,12 +99,37 @@ public class CardManager : MonoBehaviour
         return null;
     }
 
-    public void PlayCard(Card card)
+    public Character SpawnInCharacter(TileData tile, Card card, bool isHandAi = false)
     {
-        userHand.Remove(card);
+        Character character = Instantiate(characterPrefabs[(int)card.cardType]).GetComponent<Character>();
+        character.transform.position = new Vector3(tile.gridLocation.x, tile.gridLocation.y, -2f);
 
-        card.card.selected = false;
-        Destroy(card.card.gameObject);
+        character.standingOnTile = tile;
+        character.type = isHandAi ? MobType.Enemy : MobType.Hero;
+        character.characterCard = card;
+
+        character.transform.SetParent(characterContainer.transform);
+        character.name = character.characterCard.name;
+
+        GridManager.Instance.SetCharacterOnTile(character, tile.gridLocation);
+        PlayCard(card, isHandAi);
+
+        return character;
+    }
+
+    public void PlayCard(Card card, bool isHandAi = false)
+    {
+        if (isHandAi)
+        {
+            aiHand.Remove(card);
+        }
+        else
+        {
+            userHand.Remove(card);
+
+            card.card.selected = false;
+            Destroy(card.card.gameObject);
+        }
     }
 
     public bool CardSelectedAllowed()

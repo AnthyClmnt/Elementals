@@ -12,6 +12,8 @@ public class Tile : MonoBehaviour
     public int G;
     public int H;
 
+    public TileType tileType;
+
     public int F { 
         get 
         { 
@@ -24,6 +26,11 @@ public class Tile : MonoBehaviour
     public void SetColour(bool isOffset)
     {
         spriteRenderer.sprite = isOffset ? sprite1 : sprite2;
+    }
+
+    public void SetTileType(TileType tileType)
+    {
+        this.tileType = tileType;
     }
 
     void OnMouseEnter()

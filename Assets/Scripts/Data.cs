@@ -5,7 +5,25 @@ public struct TileData
     public Tile tile;
     public Vector2Int gridLocation;
     public bool walkable;
+    public bool shrineLocation;
     public Character character;
+    public Shrine shrine;
+}
+
+public struct ShrineData
+{
+    public Tile tile;
+    public MobType shrineType;
+    public int health;
+    public int currHealth;
+
+    public ShrineData(Tile tile, MobType shrineType)
+    {
+        this.tile = tile;
+        this.shrineType = shrineType;
+        health = 200;
+        currHealth = 200;
+    } 
 }
 
 public struct Card
@@ -17,6 +35,7 @@ public struct Card
 
     public int attack;
     public int health;
+    public int currHealth;
     public int range;
 
     public Card(CardType cardType, PlayingCard card, int attack, int health, int range)
@@ -25,6 +44,7 @@ public struct Card
         this.card = card;
         this.attack = attack;
         this.health = health;
+        currHealth = health;
         this.range = range;
 
 
@@ -48,12 +68,27 @@ public struct Card
     }
 }
 
+public enum MobType
+{
+    Hero = 0,
+    Enemy = 1
+}
+
 public enum GameState
 {
     InitialiseGrid = 0,
     InitialiseCards = 1,
     HeroesTurn = 2,
-    EnemiesTurn = 3
+    EnemiesTurn = 3,
+    HeroWin = 4,
+    EnemyWin = 5,
+}
+
+public enum TileType
+{
+    Grass = 0,
+    Rock = 1,
+    Water = 2
 }
 
 public enum CardType

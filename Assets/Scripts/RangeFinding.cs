@@ -6,7 +6,7 @@ public class RangeFinding
 {
     private Pathfinding pathfinding;
 
-    public List<TileData> GetRangeTiles(TileData startingTile, int range)
+    public List<TileData> GetRangeTiles(TileData startingTile, int range, CardType cardType)
     {
         pathfinding = new Pathfinding(); 
         
@@ -27,7 +27,7 @@ public class RangeFinding
                 var tiles = pathfinding.GetNeighbourTiles(tile);
                 foreach(var tilez in tiles)
                 {
-                    if(tilez.walkable)
+                    if(tilez.walkable || (tilez.tile.tileType == TileType.Water && cardType == CardType.Water))
                     {
                         surroundingTiles.Add(tilez);
                     }
