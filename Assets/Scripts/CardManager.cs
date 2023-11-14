@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using UnityEditor.U2D.Animation;
 using UnityEngine;
 
 public class CardManager : MonoBehaviour
@@ -18,6 +19,10 @@ public class CardManager : MonoBehaviour
 
     public List<Card> userHand = new();
     public List<Card> aiHand = new();
+
+    [SerializeField] private int minRange, maxRange;
+    [SerializeField] private int minAttack, maxAttack;
+    [SerializeField] private int minHealth, maxHealth;
 
     private void Awake()
     {
@@ -38,7 +43,7 @@ public class CardManager : MonoBehaviour
 
         float z0 = Mathf.Sqrt(-2f * Mathf.Log(u1)) * Mathf.Cos(2f * Mathf.PI * u2);
 
-        return Mathf.Clamp(Mathf.RoundToInt(4 + z0 * 1.5f), 2, 8);
+        return Mathf.Clamp(Mathf.RoundToInt(4 + z0 * 1.5f), minRange, maxRange);
     }
 
     private int GenerateWeightedStrength(int min, int max)
@@ -71,7 +76,7 @@ public class CardManager : MonoBehaviour
 
     private Card CreateCard(CardType cardType, PlayingCard card)
     {
-        return new(cardType, card, GenerateWeightedStrength(15, 30), GenerateWeightedStrength(50, 75), RandomGaussianRange());
+        return new(cardType, card, GenerateWeightedStrength(minAttack, maxAttack), GenerateWeightedStrength(minHealth, maxHealth), RandomGaussianRange());
     }
 
     private PlayingCard InstantiatePlayingCard(CardType cardType, int index)
@@ -108,6 +113,10 @@ public class CardManager : MonoBehaviour
         character.type = isHandAi ? MobType.Enemy : MobType.Hero;
         character.characterCard = card;
 
+        var style = GetPlayStyle(card);
+
+        character.style = style;
+
         character.transform.SetParent(characterContainer.transform);
         character.name = character.characterCard.name;
 
@@ -115,6 +124,38 @@ public class CardManager : MonoBehaviour
         PlayCard(card, isHandAi);
 
         return character;
+    }
+
+    private bool ThresholdCheck(int value, int maxValue)
+    {
+        return value > maxValue * .6;
+    }
+
+    private PlayStyle GetPlayStyle(Card card)
+    {
+        Attribute bestAttribute = card.GetBestAttribute(maxAttack, maxRange, maxHealth);
+
+        if (bestAttribute == Attribute.Attack && ThresholdCheck(card.attack, maxAttack))
+        {
+            return PlayStyle.Aggressor;
+        }
+
+        else if (bestAttribute == Attribute.Range && ThresholdCheck(card.range, maxRange))
+        {
+            return PlayStyle.Roamer;
+        }
+
+        else if (bestAttribute == Attribute.Health && ThresholdCheck(card.health, maxHealth))
+        {
+            return PlayStyle.Defender;
+        }
+
+        else if (!ThresholdCheck(card.attack, maxAttack) && !ThresholdCheck(card.range, maxRange) && ThresholdCheck(card.health, maxHealth))
+        {
+            return PlayStyle.Scared;
+        }
+
+        return PlayStyle.Default;
     }
 
     public void PlayCard(Card card, bool isHandAi = false)

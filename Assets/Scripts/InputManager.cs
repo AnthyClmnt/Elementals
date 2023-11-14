@@ -1,8 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.XR;
 
 public class InputManager : MonoBehaviour
 {
+    public static InputManager Instance;
+
     public GameObject[] characterPrefabs;
 
     private Pathfinding pathfinding;
@@ -16,10 +19,17 @@ public class InputManager : MonoBehaviour
 
     private Character selectedCharacter;
 
+    public List<Character> charactersInPlay = new();
+
     private bool showingRange = false;
     private TileData startPosTile;
 
     private bool isMoving = false;
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -31,6 +41,11 @@ public class InputManager : MonoBehaviour
 
     private void LateUpdate()
     {
+        if (CardManager.Instance.userHand.Count == 0 && charactersInPlay.Count == 0 && path.Count == 0)
+        {
+            EndUserTurn();
+        }
+
         TileData? nullableFocusedTile = GridManager.Instance.GetTileData(Camera.main.ScreenToWorldPoint(Input.mousePosition));
         if (nullableFocusedTile.HasValue && !isMoving && GameManager.Instance.GameState == GameState.HeroesTurn)
         {
@@ -142,9 +157,18 @@ public class InputManager : MonoBehaviour
         showingRange = false;
     }
 
+    public void CharacterKilled(Character character)
+    {
+        if (charactersInPlay.Contains(character))
+        {
+            charactersInPlay.Remove(character);
+        }
+    }
+
     private void SpawnInCharacter(TileData tile, Card card)
     {
-        CardManager.Instance.SpawnInCharacter(tile, card);
+        Character character = CardManager.Instance.SpawnInCharacter(tile, card);
+        charactersInPlay.Add(character);
     }
 
     private void MoveAlongPath()

@@ -8,6 +8,8 @@ public class Character : MonoBehaviour
 
     public MobType type;
 
+    public PlayStyle style;
+
     public HealthBar healthBar;
 
     public GameObject attack;
@@ -33,7 +35,8 @@ public class Character : MonoBehaviour
 
         if (characterCard.currHealth <= 0)
         {
-            AiManager.Instance.CharacterKilled(this);
+            AiManager2.Instance.CharacterKilled(this);
+            InputManager.Instance.CharacterKilled(this);
             Destroy(this.gameObject);
         }
     }

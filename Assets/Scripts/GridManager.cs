@@ -5,7 +5,9 @@ public class GridManager : MonoBehaviour
 {
     public static GridManager Instance;
 
-    [SerializeField] private int gridWidth, gridHeight;
+    private Pathfinding pathfinding;
+
+    [SerializeField] public int gridWidth, gridHeight;
     [SerializeField] private Tile[] tiles;
     [SerializeField] private GameObject shrine; // probably needs to change to script 
     [SerializeField] private Camera mainCamera;
@@ -19,6 +21,7 @@ public class GridManager : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        pathfinding = new Pathfinding();
     }
 
     public void InitialiseGrid()
@@ -57,33 +60,53 @@ public class GridManager : MonoBehaviour
 
     private void GenerateGrid()
     {
-        for (int x = 0; x < gridWidth; x++)
+        bool validGrid = false;
+
+        while (!validGrid)
         {
-            for (int y = 0; y < gridHeight; y++)
+            for (int x = 0; x < gridWidth; x++)
             {
-                Vector3Int tilePos = new(x, y, 0);
-
-                bool isGrass = Random.value > .3;
-
-                if(x < 2 || x >= gridWidth - 2)
+                for (int y = 0; y < gridHeight; y++)
                 {
-                    isGrass = true;
+                    Vector3Int tilePos = new(x, y, 0);
+
+                    bool isGrass = Random.value > .3;
+
+                    if (x < 2 || x >= gridWidth - 2)
+                    {
+                        isGrass = true;
+                    }
+
+                    float randomTile = Random.value;
+                    Tile selectedTile = isGrass ? tiles[0] : randomTile > .5 ? tiles[1] : tiles[2];
+
+                    Tile newTile = Instantiate(selectedTile, tilePos, Quaternion.identity);
+
+                    newTile.SetTileType(isGrass ? TileType.Grass : randomTile > .5 ? TileType.Water : TileType.Rock);
+
+                    newTile.name = $"{x},{y}";
+                    newTile.transform.parent = this.gameObject.transform;
+
+                    if (isGrass)
+                    {
+                        newTile.SetColour((x + y) % 2 == 0);
+                    }
+                    tileData.Add(new Vector2Int(x, y), new TileData { tile = newTile, gridLocation = (Vector2Int)tilePos, walkable = isGrass });
                 }
+            }
 
-                float randomTile = Random.value;
-                Tile selectedTile = isGrass ? tiles[0] : randomTile > .5 ? tiles[1] : tiles[2];
+            var path = pathfinding.FindPath(tileData[new(0, 0)], tileData[new(gridWidth - 1, gridHeight - 1)], CardType.Fire);
 
-                Tile newTile = Instantiate(selectedTile, tilePos, Quaternion.identity);
-
-                newTile.SetTileType(isGrass ? TileType.Grass : randomTile > .5 ? TileType.Water : TileType.Rock);
-
-                newTile.name = $"{x},{y}";
-                newTile.transform.parent = this.gameObject.transform;
-
-                if (isGrass) {
-                    newTile.SetColour((x + y) % 2 == 0);
+            if (path.Count > 0)
+            {
+                validGrid = true;
+            } else
+            {
+                foreach (var tile in tileData.Values)
+                {
+                    Destroy(tile.tile.gameObject);
                 }
-                tileData.Add(new Vector2Int(x, y), new TileData { tile = newTile, gridLocation = (Vector2Int)tilePos, walkable = isGrass });
+                tileData.Clear();
             }
         }
     }

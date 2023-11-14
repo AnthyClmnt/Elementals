@@ -1132,6 +1132,7 @@ MonoBehaviour:
   - {fileID: 2021871684813689078, guid: 2680e5a7902eb204c9de1b6783c8d1f3, type: 3}
   - {fileID: 5916443397680302328, guid: 3ebafccfd25dbc84cbbdec1cfd00ab1a, type: 3}
   container: {fileID: 443952675}
+  charactersInPlay: []
 --- !u!1 &1316465080
 GameObject:
   m_ObjectHideFlags: 0
@@ -1247,6 +1248,12 @@ MonoBehaviour:
   characterContainer: {fileID: 443952675}
   handSize: 5
   canvas: {fileID: 1458409095}
+  minRange: 1
+  maxRange: 8
+  minAttack: 10
+  maxAttack: 35
+  minHealth: 50
+  maxHealth: 80
 --- !u!1 &1457152781
 GameObject:
   m_ObjectHideFlags: 0
@@ -1528,7 +1535,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1598872390}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6345c24a7490c9b42accd00ac865a114, type: 3}
+  m_Script: {fileID: 11500000, guid: ff54790b254a8b34c9a592059eee82db, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1623179577

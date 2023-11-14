@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
 public class Pathfinding
 {
-    public List<TileData> FindPath(TileData start, TileData destination, CardType cardType)
+    public List<TileData> FindPath(TileData start, TileData destination, CardType cardType, int range = 0)
     {
         if (destination.character != null)
         {
@@ -25,7 +26,7 @@ public class Pathfinding
 
             if(currentTile.tile == destination.tile)
             {
-                return GetPathList(start, destination);
+                return GetPathList(start, destination, range);
             }
 
             foreach( TileData tile in GetNeighbourTiles(currentTile))
@@ -52,7 +53,7 @@ public class Pathfinding
         return new List<TileData>();
     }
 
-    private List<TileData> GetPathList(TileData start, TileData destination)
+    private List<TileData> GetPathList(TileData start, TileData destination, int range)
     {
         List<TileData> finishedList = new();
 
@@ -65,6 +66,11 @@ public class Pathfinding
         }
 
         finishedList.Reverse();
+
+        if (range != 0 && finishedList.Count > range)
+        {
+            finishedList.RemoveRange(range, finishedList.Count - range);
+        }
 
         return finishedList;
     }

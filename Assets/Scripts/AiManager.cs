@@ -1,4 +1,7 @@
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class AiManager : MonoBehaviour
@@ -10,21 +13,29 @@ public class AiManager : MonoBehaviour
 
     private List<TileData> path = new();
     private Character pathCharacter;
+    private Character chasingCharacter;
 
-    private List<Character> characterInPlay = new();
+    private List<Character> charactersInPlay = new();
     private List<Card> hand;
 
+
     private bool isMoving = false;
+
+    private int gridWith;
+    private int gridHeight;
 
     private void Awake()
     {
         Instance = this;
+        gridWith = GridManager.Instance.gridWidth;
+        gridHeight = GridManager.Instance.gridHeight;
     }
 
     private void Start()
     {
         pathfinding = new Pathfinding();
         rangeFinding =  new RangeFinding();
+
     }
 
     private void LateUpdate()
@@ -33,93 +44,68 @@ public class AiManager : MonoBehaviour
         {
             hand = CardManager.Instance.aiHand;
 
-            if(hand.Count == 0 && characterInPlay.Count == 0)
+            if (hand.Count == 0 && charactersInPlay.Count == 0) // no available moves, end ai go
             {
                 EndTurn();
                 return;
             }
-            
-            if (characterInPlay.Count == 0 && !isMoving) 
-            {
-                var tileData = GridManager.Instance.tileData;
 
-                Character character = CardManager.Instance.SpawnInCharacter(tileData[new Vector2Int(18, 2)], SelectCharacter(), true);
-                characterInPlay.Add(character);
+            else if ((charactersInPlay.Count == 0 || Random.value > .85) && !isMoving) // no characters in play, ai must spawn in character
+            {
+                Character character = CardManager.Instance.SpawnInCharacter(GetSpawnTile(), SelectCard(), true);
+                charactersInPlay.Add(character);
 
                 EndTurn();
             }
-            else if (!isMoving && characterInPlay.Count > 0)
+
+
+/*            else if (!isMoving && chasingCharacter != null) // if aggressor character if chasing player character
             {
-                var destination = GridManager.Instance.heroShineTileData;
-                var nullableCharacterTile = GridManager.Instance.GetTileData(characterInPlay[0].transform.position);
+                RoamingChasing(chasingCharacter);
+            }*/
 
-                if (nullableCharacterTile.HasValue)
+            if (!isMoving && chasingCharacter == null && path.Count == 0) // no specific moves to make, ai will decide 
+            {
+                Character chosenCharacter = ChooseCharacter();
+
+                chosenCharacter.style = PlayStyle.Aggressor;
+
+                switch (chosenCharacter.style)
                 {
-                    TileData characterTile = nullableCharacterTile.Value;
+                    case PlayStyle.Aggressor:
+                        AggressorMove(chosenCharacter);
+                        break;
 
-                    var rangeTiles = rangeFinding.GetRangeTiles(characterTile, characterTile.character.characterCard.range, characterTile.character.characterCard.cardType);
-
-                    Character characterToAttack = null;
-                    foreach (TileData tile in rangeTiles)
-                    {
-                        if (tile.character && tile.character.type == MobType.Hero)
-                        {
-                            characterToAttack = tile.character;
-                            break;
-                        }
-                    }
-
-                    if (rangeTiles.Contains(GridManager.Instance.heroShineTileData))
-                    {
-                        destination.shrine.TakeDamage(characterTile.character.characterCard.attack);
+                    case PlayStyle.Roamer:
+                        //RoamerMove(chosenCharacter);
                         EndTurn();
-                    }
+                        break;
 
-                    else if (characterToAttack != null)
-                    {
-                        characterToAttack.TakeDamage(characterTile.character.characterCard.attack);
-                        EndTurn();
-                    }
+                    case PlayStyle.Defender:
+                        break;
 
-                    else if (characterTile.gridLocation != destination.gridLocation)
-                    {
-                        path = pathfinding.FindPath(characterTile, destination, characterTile.character.characterCard.cardType);
+                    case PlayStyle.Scared:
+                        break;
 
-                        if (path[path.Count - 1].shrineLocation)
-                        {
-                            path.RemoveAt(path.Count - 1);
-                        }
-
-                        if (path.Count > 0)
-                        {
-                            GridManager.Instance.RemoveCharacterFromTile(characterTile.gridLocation);
-
-                            if (path.Count > characterTile.character.characterCard.range)
-                            {
-                                path.RemoveRange(characterTile.character.characterCard.range, path.Count - characterTile.character.characterCard.range);
-
-                                if (path[path.Count - 1].character != null)
-                                {
-                                    path.RemoveAt(path.Count - 1);
-                                }
-                            }
-                            pathCharacter = characterTile.character;
-                        }
-                    }
+                    case PlayStyle.Default:
+                        break;
                 }
             }
 
-            if (path.Count > 0)
+            if (path.Count > 0) // is character still moving along path, keep updating and running until path reached
             {
                 isMoving = true;
                 MoveAlongPath();
-            } 
+            }
+
             else
             {
                 EndTurn();
             }
         }
     }
+
+    // Path moving code
 
     private void MoveAlongPath()
     {
@@ -145,7 +131,6 @@ public class AiManager : MonoBehaviour
             EndTurn();
         }
     }
-
     private void PositionCharacterOnLine(TileData tile)
     {
         pathCharacter.transform.position = new Vector3(tile.gridLocation.x, tile.gridLocation.y + 0.0001f, pathCharacter.transform.position.z);
@@ -153,7 +138,148 @@ public class AiManager : MonoBehaviour
         pathCharacter.standingOnTile = tile;
     }
 
-    private Card SelectCharacter()
+    // End
+
+    // moves code 
+
+    /*private void RoamerMove(Character chosenCharacter)
+    {
+        bool moveExecuted = RoamingChasing(chosenCharacter, false);
+        if (moveExecuted)
+        {
+            return;
+        }
+
+        AttemptShrineAttack(chosenCharacter);
+    }*/
+
+    // End
+    
+    // Aggressor code 
+
+    private void AggressorMove(Character aggressor)
+    {
+        var rangeTiles = rangeFinding.GetRangeTiles(aggressor.standingOnTile, aggressor.characterCard.range, aggressor.characterCard.cardType);
+        TileData shrineLocation = GridManager.Instance.heroShineTileData;
+
+        if (rangeTiles.Contains(GridManager.Instance.heroShineTileData))
+        {
+            Character characterToAttack = null;
+            foreach (TileData tile in rangeTiles)
+            {
+                if (tile.character && tile.character.type == MobType.Hero)
+                {
+                    characterToAttack = tile.character;
+                    break;
+                }
+            }
+
+            if (characterToAttack != null)
+            {
+                AttackPlayerCharacter(characterToAttack, aggressor);
+                EndTurn();
+            }
+
+            else
+            {
+                ShrineAttack(shrineLocation, aggressor.characterCard.attack);
+                EndTurn();
+            }
+        }
+        
+        else
+        {
+            pathCharacter = aggressor;
+            path = pathfinding.FindPath(aggressor.standingOnTile, shrineLocation, aggressor.characterCard.cardType, aggressor.characterCard.range);
+        }
+    }
+
+    // End
+
+    // Roaming code
+
+    private bool RoamingChasing(Character roamer, bool chasing = true)
+    {
+        Character closestCharacter = FindClosestCharacter(roamer);
+
+        if (closestCharacter != null)
+        {
+            chasingCharacter = roamer;
+
+            var rangeTiles = rangeFinding.GetRangeTiles(roamer.standingOnTile, roamer.characterCard.range, roamer.characterCard.cardType);
+
+            Character characterToAttack = null;
+            foreach (TileData tile in rangeTiles)
+            {
+                if (tile.character == closestCharacter && tile.character.type == MobType.Hero)
+                {
+                    characterToAttack = tile.character;
+                    break;
+                }
+            }
+
+            if (characterToAttack != null)
+            {
+                AttackPlayerCharacter(closestCharacter, roamer);
+                return true;
+            }
+            else
+            {
+                pathCharacter = roamer;
+                path = pathfinding.FindPath(roamer.standingOnTile, closestCharacter.standingOnTile, roamer.characterCard.cardType, roamer.characterCard.range);
+                return false;
+            }
+        }
+        else
+        {
+            if (chasing)
+            {
+                chasingCharacter = null;
+                return false;
+            }
+            else
+            {
+                return false;
+            }
+        }
+    }
+
+    private Character FindClosestCharacter(Character character)
+    {
+        List<Character> playerCharacters = InputManager.Instance.charactersInPlay;
+
+        Character closestCharacter = new();
+        int closestDistance = 9999;
+
+        foreach (Character chara in playerCharacters)
+        {
+            int distance = pathfinding.FindPath(character.standingOnTile, chara.standingOnTile, character.characterCard.cardType).Count;
+            if (distance < closestDistance)
+            {
+                closestCharacter = chara;
+                closestDistance = distance;
+            }
+        }
+
+        return closestCharacter;
+    }
+
+    private void AttackPlayerCharacter(Character victim, Character attacker)
+    {
+        victim.TakeDamage(attacker.characterCard.attack);
+        EndTurn();
+    }
+
+    // End
+
+    // Selection code
+
+    private Character ChooseCharacter()
+    {
+        return charactersInPlay[0];
+    }
+
+    private Card SelectCard()
     {
         List<Card> cards = CardManager.Instance.aiHand;
         
@@ -173,12 +299,82 @@ public class AiManager : MonoBehaviour
         return selectedCard;
     }
 
+    // End
+
+    // Misc Functions
+
+    private bool AttemptShrineAttack(Character attacker)
+    {
+        var rangeTiles = rangeFinding.GetRangeTiles(attacker.standingOnTile, attacker.characterCard.range, attacker.characterCard.cardType);
+        var shrineDestination = GridManager.Instance.heroShineTileData;
+
+        if (rangeTiles.Contains(shrineDestination))
+        {
+            ShrineAttack(shrineDestination, attacker.characterCard.attack);
+            return true;
+        } 
+
+        else
+        {
+            path = pathfinding.FindPath(attacker.standingOnTile, shrineDestination, attacker.characterCard.cardType, attacker.characterCard.range);
+
+            if (path[path.Count - 1].shrineLocation)
+            {
+                path.RemoveAt(path.Count - 1);
+            }
+
+            return true;
+        }
+    }
+
+    private void ShrineAttack(TileData shrineTile, int damage)
+    {
+        shrineTile.shrine.TakeDamage(damage);
+        EndTurn();
+    }
+
+    private bool GetCharacterInRange(Character character)
+    {
+        var rangeTiles = rangeFinding.GetRangeTiles(character.standingOnTile, character.characterCard.range, character.characterCard.cardType);
+
+        Character characterToAttack = null;
+        foreach (TileData tile in rangeTiles)
+        {
+            if (tile.character && tile.character.type == MobType.Hero)
+            {
+                characterToAttack = tile.character;
+                break;
+            }
+        }
+
+        if (characterToAttack != null)
+        {
+            AttackPlayerCharacter(characterToAttack, character);
+            return true;
+        }
+
+        return false;
+    }
+
+    private TileData GetSpawnTile()
+    {
+        var tileData = GridManager.Instance.tileData;
+
+        Vector2Int pos = new(Random.Range(gridWith - 2, gridWith - 1), Random.Range(0, gridHeight - 1));
+
+        if (tileData[pos].character != null)
+        {
+            GetSpawnTile();
+        }
+
+        return tileData[pos];
+    }
+
     public void CharacterKilled(Character character)
     {
-        if(characterInPlay.Contains(character))
+        if(charactersInPlay.Contains(character))
         {
-            hand.Remove(character.characterCard);
-            characterInPlay.Remove(character);
+            charactersInPlay.Remove(character);
         }
     }
 

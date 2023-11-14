@@ -1,4 +1,5 @@
-using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine;using System;
 
 public struct TileData
 {
@@ -24,6 +25,15 @@ public struct ShrineData
         health = 200;
         currHealth = 200;
     } 
+}
+
+public struct ScenarioState
+{
+    public List<Character> HeroCharacters;
+    public List<Character> AiCharacters;
+    public List<Card> AiCards;
+    public Shrine HeroShrine;
+    public Shrine AiShrine;
 }
 
 public struct Card
@@ -66,12 +76,55 @@ public struct Card
                 break;
         }
     }
+
+    private readonly int GetAttributePercent(int value, int maxValue)
+    {
+        return (int)Math.Round((double)value / maxValue * 100);
+    }
+
+    public readonly Attribute GetBestAttribute(int maxAttack, int maxRange, int maxHealth)
+    {
+        int attackPercentage = GetAttributePercent(attack, maxAttack);
+        int rangePercentage = GetAttributePercent(range, maxRange);
+        int healthPercentage = GetAttributePercent(health, maxHealth);
+
+        int best = Mathf.Max(attackPercentage, Mathf.Max(rangePercentage, healthPercentage));
+
+        if (best == attackPercentage)
+        {
+            return Attribute.Attack;
+        } 
+        else if (best == healthPercentage)
+        {
+            return Attribute.Health;
+        }
+        else
+        {
+            return Attribute.Range;
+        }
+    }
 }
 
 public enum MobType
 {
     Hero = 0,
     Enemy = 1
+}
+
+public enum Attribute
+{
+    Attack = 0,
+    Range = 1,
+    Health = 2,
+}
+
+public enum PlayStyle // based on best/worst attribute(s)
+{
+    Aggressor = 0, // good attack
+    Roamer = 1, // good range
+    Defender = 2, // good health
+    Scared = 3, // poor everything 
+    Default = 4, // balanced card
 }
 
 public enum GameState
