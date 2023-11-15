@@ -428,6 +428,7 @@ public class AiManager : MonoBehaviour
         foreach (Character character in charactersInPlay)
         {
             // check if character in range of hero character
+
         }
         return charactersInPlay[0];
     }
