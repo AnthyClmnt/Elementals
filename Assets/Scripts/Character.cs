@@ -35,7 +35,7 @@ public class Character : MonoBehaviour
 
         if (characterCard.currHealth <= 0)
         {
-            AiManager2.Instance.CharacterKilled(this);
+            AiManager.Instance.CharacterKilled(this);
             InputManager.Instance.CharacterKilled(this);
             Destroy(this.gameObject);
         }
