@@ -99,8 +99,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   type: 0
+  style: 0
   healthBar: {fileID: 3877816894982920284}
   attack: {fileID: 1305188596664670284, guid: 2fc5924cefe819049b42408be459d812, type: 3}
+  spriteRenderer: {fileID: 8294292845465910224}
+  enenmySprite: {fileID: 21300000, guid: a492cf72b8628cf48bf4e9d5b835ebb0, type: 3}
 --- !u!1 &2289393258318127529
 GameObject:
   m_ObjectHideFlags: 0

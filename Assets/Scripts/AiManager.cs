@@ -1,8 +1,6 @@
-using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.TextCore.Text;
 
 public class AiManager : MonoBehaviour
 {
@@ -21,7 +19,9 @@ public class AiManager : MonoBehaviour
     private Character pathCharacter;
     private List<TileData> path = new();
 
-    private Character roamerChasing; 
+    private Character roamerChasing;
+
+    private bool coroutineRunning = false;
 
     private void Awake()
     {
@@ -39,38 +39,51 @@ public class AiManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (GameManager.Instance.GameState == GameState.EnemiesTurn)
+        if (GameManager.Instance.gameState == GameState.EnemiesTurn)
         {
-            if (path.Count == 0)
-            {
-                hand = CardManager.Instance.aiHand;
-
-                if (roamerChasing != null)
-                {
-                    RoamerMove(roamerChasing);
-                }
-
-                else if (hand.Count == 0 && charactersInPlay.Count == 0) // no available moves, end ai go
-                {
-                    EndTurn();
-                    return;
-                }
-
-                else if (charactersInPlay.Count == 0 && hand.Count > 0) // no characters in play, ai must spawn in character CHANGE TO CORRECT VALUE
-                {
-                    SpawnCharacter();
-                }
-
-                else
-                {
-                    CalculateMove();
-                }
-            }
-
-            else if(path.Count > 0)
+            if (path.Count > 0)
             {
                 MoveAlongPath();
             }
+            else if (coroutineRunning == false)
+            {
+                coroutineRunning = true;
+                StartCoroutine(MakeDelayedMove());
+            }   
+        }
+    }
+
+    IEnumerator MakeDelayedMove()
+    {
+        yield return new WaitForSeconds(.5f);
+
+        MakeMove();
+    }
+
+    private void MakeMove()
+    {
+        coroutineRunning = false;
+        hand = CardManager.Instance.aiHand;
+
+        if (roamerChasing != null)
+        {
+            RoamerMove(roamerChasing);
+        }
+
+        else if (hand.Count == 0 && charactersInPlay.Count == 0) // no available moves, end ai go
+        {
+            EndTurn();
+            return;
+        }
+
+        else if (charactersInPlay.Count == 0 && hand.Count > 0) // no characters in play, ai must spawn in character
+        {
+            SpawnCharacter();
+        }
+
+        else
+        {
+            CalculateMove();
         }
     }
 
@@ -80,8 +93,6 @@ public class AiManager : MonoBehaviour
 
         if (chosenCharacter != null)
         {
-            Debug.Log(chosenCharacter.style);
-
             switch (chosenCharacter.style)
             {
                 case PlayStyle.Aggressor:
@@ -106,7 +117,6 @@ public class AiManager : MonoBehaviour
             }
         } else
         {
-            Debug.Log("character returned was null");
             EndTurn();
         }
     }
@@ -212,8 +222,7 @@ public class AiManager : MonoBehaviour
 
         else
         {
-            Debug.Log("no move for defender");
-            EndTurn();
+            GetValidPath(defender.standingOnTile, defender.spawnTile, defender, false);
         }
     }
 
@@ -318,6 +327,11 @@ public class AiManager : MonoBehaviour
             pathCharacter = character;
         }
 
+        if (path.Count == 0)
+        {
+            EndTurn();
+        }
+
         this.path = path;
     }
 
@@ -337,42 +351,6 @@ public class AiManager : MonoBehaviour
         {
             GetValidPath(scaredTile, GridManager.Instance.GetTileData(topCorner).Value, scaredTile.character);
         }
-    }
-
-    private List<Character> FindEnemyWithinShrineRange()
-    {
-        List<Character> playerCharacters = InputManager.Instance.charactersInPlay;
-        TileData shrineTileData = GridManager.Instance.enemyShineTileData;
-
-        List<Character> attackShrineCharacters = new();
-
-        foreach (Character chara in playerCharacters)
-        {
-            int distance = pathfinding.FindPath(chara.standingOnTile, shrineTileData, chara.characterCard.cardType, 0).Count;
-            if (distance <= chara.characterCard.range)
-            {
-                attackShrineCharacters.Add(chara);
-            }
-        }
-
-        if (attackShrineCharacters.Count <= 1)
-        {
-            return attackShrineCharacters;
-        }
-
-        int lowestHealth = 999;
-        foreach (Character attackCharacter in attackShrineCharacters)
-        {
-            if (attackCharacter.characterCard.currHealth < lowestHealth)
-            {
-                lowestHealth = attackCharacter.characterCard.currHealth;
-            } else
-            {
-                attackShrineCharacters.Remove(attackCharacter);
-            }
-        }
-
-        return attackShrineCharacters;
     }
 
     private Character FindClosestCharacter(Character character)
@@ -460,7 +438,7 @@ public class AiManager : MonoBehaviour
         TileData validTile = new();
         while (!validTileFound)
         {
-            Vector2Int pos = new(UnityEngine.Random.Range(gridWith - 2, gridWith - 1), UnityEngine.Random.Range(0, gridHeight - 1));
+            Vector2Int pos = new(Random.Range(gridWith - 2, gridWith - 1), Random.Range(0, gridHeight - 1));
 
             if (tileData[pos].character == null)
             {
@@ -474,15 +452,16 @@ public class AiManager : MonoBehaviour
 
     private Character ChooseCharacter()
     {
-        List<Character> heroesInShrineRange = FindEnemyWithinShrineRange();
-        if (heroesInShrineRange.Count > 0)
+        if (InputManager.Instance.charactersInPlay.Count == 0 && CardManager.Instance.userHand.Count == 0 && charactersInPlay.Count == 1)
         {
-            Debug.Log("oops");
+            Character changedCharacter = charactersInPlay[0];
+            changedCharacter.style = PlayStyle.Aggressor;
+
+            charactersInPlay[0] = changedCharacter;
             return charactersInPlay[0];
-            // should be defender move, use defender if one exists, otherwise use character in play with greatest x value
         }
 
-        if (UnityEngine.Random.value < .2 && hand.Count > 0)
+        if (Random.value < .1 && hand.Count > 0)
         {
             SpawnCharacter();
             return null;
@@ -493,7 +472,7 @@ public class AiManager : MonoBehaviour
             List<Character> preferredCharacters = new();
             foreach (Character character in charactersInPlay)
             {
-                if (character.style == PlayStyle.Aggressor || character.style == PlayStyle.Roamer || character.style == PlayStyle.Default)
+                if (character.style == PlayStyle.Aggressor || character.style == PlayStyle.Roamer)
                 {
                     preferredCharacters.Add(character);
                 }
@@ -507,11 +486,11 @@ public class AiManager : MonoBehaviour
                     return null;
                 }
                 
-                return charactersInPlay[UnityEngine.Random.Range(0, preferredCharacters.Count - 1)];
+                return charactersInPlay[Random.Range(0, preferredCharacters.Count - 1)];
             }
             else
             {
-                return preferredCharacters[UnityEngine.Random.Range(0, preferredCharacters.Count - 1)];
+                return preferredCharacters[Random.Range(0, preferredCharacters.Count - 1)];
             }
         }
     }

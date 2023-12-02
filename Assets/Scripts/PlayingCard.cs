@@ -39,7 +39,7 @@ public class PlayingCard : MonoBehaviour
 
     private bool SelectionAllowed()
     {
-        return CardManager.Instance.CardSelectedAllowed() && GameManager.Instance.GameState == GameState.HeroesTurn;
+        return CardManager.Instance.CardSelectedAllowed() && GameManager.Instance.gameState == GameState.HeroesTurn;
     }
 
     private void OnMouseEnter()

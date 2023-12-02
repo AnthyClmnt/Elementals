@@ -1,10 +1,15 @@
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
-    public GameState GameState;
+    public GameState gameState;
+
+    public GameState previousGameState;
+
+    public TMP_Text turnText;
 
     private void Awake()
     {
@@ -16,11 +21,23 @@ public class GameManager : MonoBehaviour
         ChangeGameState(GameState.InitialiseGrid);
     }
 
-    public void ChangeGameState(GameState newState) 
+    public void ChangeGameState(GameState newState, bool pauseState = false) 
     {
-        GameState = newState;
-        switch(newState)
+        if (pauseState)
         {
+            previousGameState = gameState;
+        }
+        
+        gameState = newState;
+        switch(gameState)
+        {
+            case GameState.Pause:
+                break;
+
+            case GameState.Resume:
+                ChangeGameState(previousGameState);
+                break;
+
             case GameState.InitialiseGrid:
                 GridManager.Instance.InitialiseGrid();
                 break;
@@ -30,20 +47,21 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.HeroesTurn:
+                turnText.text = "Hero's Turn";
                 break;
 
             case GameState.EnemiesTurn:
-                //ChangeGameState(GameState.HeroesTurn);
+                turnText.text = "Enemies' Turn";
                 break;
 
             case GameState.HeroWin:
                 Debug.Log("wooo hero won");
-                SceneManager.LoadScene(0);
+                SceneManager.LoadScene(2);
                 break;
 
             case GameState.EnemyWin:
                 Debug.Log("booo enemy won");
-                SceneManager.LoadScene(0);
+                SceneManager.LoadScene(2);
                 break;
         }
     }

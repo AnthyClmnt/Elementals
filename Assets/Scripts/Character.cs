@@ -6,6 +6,8 @@ public class Character : MonoBehaviour
 
     public Card characterCard;
 
+    public TileData spawnTile;
+
     public MobType type;
 
     public PlayStyle style;
@@ -13,6 +15,10 @@ public class Character : MonoBehaviour
     public HealthBar healthBar;
 
     public GameObject attack;
+
+    public SpriteRenderer spriteRenderer;
+
+    public Sprite enenmySprite;
 
     private void Awake()
     {
@@ -22,6 +28,11 @@ public class Character : MonoBehaviour
     private void Start()
     {
         healthBar.SetMaxHealth(characterCard.health);
+
+        if (type == MobType.Enemy)
+        {
+            spriteRenderer.sprite = enenmySprite;
+        }
     }
 
     public void TakeDamage(int damageAmount)

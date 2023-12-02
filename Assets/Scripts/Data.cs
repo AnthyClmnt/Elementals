@@ -135,6 +135,8 @@ public enum GameState
     EnemiesTurn = 3,
     HeroWin = 4,
     EnemyWin = 5,
+    Pause = 6,
+    Resume = 7,
 }
 
 public enum TileType

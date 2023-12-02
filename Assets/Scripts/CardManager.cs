@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using UnityEditor.U2D.Animation;
 using UnityEngine;
 
 public class CardManager : MonoBehaviour
@@ -112,6 +110,7 @@ public class CardManager : MonoBehaviour
         character.standingOnTile = tile;
         character.type = isHandAi ? MobType.Enemy : MobType.Hero;
         character.characterCard = card;
+        character.spawnTile = tile;
 
         var style = GetPlayStyle(card);
 

@@ -19,7 +19,7 @@ public class InputManager : MonoBehaviour
     private List<TileData> rangeTilesIgnoreWalkable;
     private Character pathCharacter;
 
-    private Character selectedCharacter;
+    public Character selectedCharacter;
 
     public List<Character> charactersInPlay = new();
 
@@ -49,7 +49,7 @@ public class InputManager : MonoBehaviour
         }
 
         TileData? nullableFocusedTile = GridManager.Instance.GetTileData(Camera.main.ScreenToWorldPoint(Input.mousePosition));
-        if (nullableFocusedTile.HasValue && !isMoving && GameManager.Instance.GameState == GameState.HeroesTurn)
+        if (nullableFocusedTile.HasValue && !isMoving && GameManager.Instance.gameState == GameState.HeroesTurn)
         {
             TileData focusedTile = nullableFocusedTile.Value;
 
@@ -130,7 +130,7 @@ public class InputManager : MonoBehaviour
 
     private void EndUserTurn()
     {
-        if (GameManager.Instance.GameState != GameState.EnemyWin && GameManager.Instance.GameState != GameState.HeroWin)
+        if (GameManager.Instance.gameState != GameState.EnemyWin && GameManager.Instance.gameState != GameState.HeroWin)
         {
             GameManager.Instance.ChangeGameState(GameState.EnemiesTurn);
         }

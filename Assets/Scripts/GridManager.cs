@@ -11,7 +11,7 @@ public class GridManager : MonoBehaviour
     [SerializeField] private Tile[] tiles;
     [SerializeField] private GameObject shrine; // probably needs to change to script 
     [SerializeField] private Camera mainCamera;
-    [SerializeField] private Canvas cardCanvas, statsCanvas;
+    [SerializeField] private Canvas cardCanvas;
 
     public Dictionary<Vector2Int, TileData> tileData;
 
@@ -49,13 +49,6 @@ public class GridManager : MonoBehaviour
         cardCanvasPos.y -= cameraHalfHeight - 1.75f;
 
         cardCanvas.transform.position = cardCanvasPos;
-
-        Vector3 statsCanvasPos = mainCamera.transform.position;
-        statsCanvasPos.z = -1;
-        statsCanvasPos.y -= cameraHalfHeight - 3;
-        statsCanvasPos.x += cameraHalfWidth - 2.25f;
-
-        statsCanvas.transform.position = statsCanvasPos;
     }
 
     private void GenerateGrid()

@@ -33,15 +33,27 @@ public class Tile : MonoBehaviour
         this.tileType = tileType;
     }
 
+    private bool IsTileWalkable(TileData tile)
+    {
+        Character selectedCharacter = InputManager.Instance.selectedCharacter;
+
+        if(selectedCharacter != null)
+        {
+            return tile.walkable || (selectedCharacter.characterCard.cardType == CardType.Water && tileType == TileType.Water);
+        }
+
+        return tile.walkable;
+    }
+
     void OnMouseEnter()
     {
-        if(GameManager.Instance.GameState == GameState.HeroesTurn)
+        if(GameManager.Instance.gameState == GameState.HeroesTurn)
         {
             exited = false;
 
             TileData tile = (TileData)GridManager.Instance.GetTileData(Camera.main.ScreenToWorldPoint(Input.mousePosition));
 
-            StartCoroutine(Highlight(tile.walkable));
+            StartCoroutine(Highlight(IsTileWalkable(tile)));
         }   
     }
 
