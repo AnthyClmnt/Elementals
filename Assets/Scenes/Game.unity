@@ -1249,11 +1249,11 @@ MonoBehaviour:
   handSize: 5
   canvas: {fileID: 1458409095}
   minRange: 1
-  maxRange: 8
+  maxRange: 6
   minAttack: 10
-  maxAttack: 35
-  minHealth: 50
-  maxHealth: 80
+  maxAttack: 25
+  minHealth: 60
+  maxHealth: 99
 --- !u!1 &1457152781
 GameObject:
   m_ObjectHideFlags: 0

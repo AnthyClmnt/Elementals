@@ -76,7 +76,7 @@ public class CardManager : MonoBehaviour
 
     private Card CreateCard(CardType cardType, PlayingCard card)
     {
-        return new(cardType, card, RandomGaussianRange(minAttack, maxAttack), RandomGaussianRange(minHealth, maxHealth), RandomGaussianRange(minRange, maxRange));
+        return new(cardType, card, GenerateWeightedStrength(minAttack, maxAttack), GenerateWeightedStrength(minHealth, maxHealth), RandomGaussianRange(minRange, maxRange));
     }
 
     private PlayingCard InstantiatePlayingCard(CardType cardType, int index)
@@ -137,29 +137,24 @@ public class CardManager : MonoBehaviour
 
         if (bestAttribute == Attribute.Attack && ThresholdCheck(card.attack, maxAttack))
         {
-            Debug.Log("Agresssor Style");
             return PlayStyle.Aggressor;
         }
 
         else if (bestAttribute == Attribute.Range && ThresholdCheck(card.range, maxRange))
         {
-            Debug.Log("Roamer Style");
             return PlayStyle.Roamer;
         }
 
         else if (bestAttribute == Attribute.Health && ThresholdCheck(card.health, maxHealth))
         {
-            Debug.Log("Defender Style");
             return PlayStyle.Defender;
         }
 
         else if (!ThresholdCheck(card.attack, maxAttack) && !ThresholdCheck(card.range, maxRange) && ThresholdCheck(card.health, maxHealth))
         {
-            Debug.Log("Scared Style");
             return PlayStyle.Scared;
         }
 
-        Debug.Log("Default Style");
         return PlayStyle.Default;
     }
 

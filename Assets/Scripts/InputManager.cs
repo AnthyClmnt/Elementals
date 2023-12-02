@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 using UnityEngine.XR;
 
 public class InputManager : MonoBehaviour
@@ -15,6 +16,7 @@ public class InputManager : MonoBehaviour
 
     private List<TileData> path;
     private List<TileData> rangeTiles;
+    private List<TileData> rangeTilesIgnoreWalkable;
     private Character pathCharacter;
 
     private Character selectedCharacter;
@@ -73,7 +75,7 @@ public class InputManager : MonoBehaviour
                     startPosTile = focusedTile;
                 }
 
-                else if (showingRange && rangeTiles.Contains(focusedTile))
+                else if (showingRange && rangeTilesIgnoreWalkable.Contains(focusedTile))
                 {
                     if (focusedTile.shrineLocation && focusedTile.gridLocation.x != 0)
                     {
@@ -138,6 +140,7 @@ public class InputManager : MonoBehaviour
     private void ShowRange(TileData tile, Character character)
     {
         rangeTiles = rangeFinding.GetRangeTiles(tile, character.characterCard.range, character.characterCard.cardType);
+        rangeTilesIgnoreWalkable = rangeFinding.GetRangeTiles(tile, character.characterCard.range, character.characterCard.cardType, true);
 
         foreach (TileData rangeTile in rangeTiles)
         {

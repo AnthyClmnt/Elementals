@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.TextCore.Text;
 
 public class AiManager : MonoBehaviour
 {
@@ -55,12 +56,9 @@ public class AiManager : MonoBehaviour
                     return;
                 }
 
-                else if ((charactersInPlay.Count <= 1 || UnityEngine.Random.value > 75) && hand.Count > 0) // no characters in play, ai must spawn in character CHANGE TO CORRECT VALUE
+                else if (charactersInPlay.Count == 0 && hand.Count > 0) // no characters in play, ai must spawn in character CHANGE TO CORRECT VALUE
                 {
-                    Character character = CardManager.Instance.SpawnInCharacter(GetSpawnTile(), SelectCard(), true);
-                    charactersInPlay.Add(character);
-
-                    EndTurn();
+                    SpawnCharacter();
                 }
 
                 else
@@ -80,27 +78,36 @@ public class AiManager : MonoBehaviour
     {
         Character chosenCharacter = ChooseCharacter();
 
-        switch (chosenCharacter.style)
+        if (chosenCharacter != null)
         {
-            case PlayStyle.Aggressor:
-                AggressorMove(chosenCharacter);
-                break;
+            Debug.Log(chosenCharacter.style);
 
-            case PlayStyle.Roamer:
-                RoamerMove(chosenCharacter);
-                break;
+            switch (chosenCharacter.style)
+            {
+                case PlayStyle.Aggressor:
+                    AggressorMove(chosenCharacter);
+                    break;
 
-            case PlayStyle.Defender:
-                DefenderMove(chosenCharacter);
-                break;
+                case PlayStyle.Roamer:
+                    RoamerMove(chosenCharacter);
+                    break;
 
-            case PlayStyle.Scared:
-                ScaredMove(chosenCharacter, charactersInPlay.Count == 1 && hand.Count == 0);
-                break;
+                case PlayStyle.Defender:
+                    DefenderMove(chosenCharacter);
+                    break;
 
-            case PlayStyle.Default:
-                DefaultMove(chosenCharacter);
-                break;
+                case PlayStyle.Scared:
+                    ScaredMove(chosenCharacter, charactersInPlay.Count == 1 && hand.Count == 0);
+                    break;
+
+                case PlayStyle.Default:
+                    DefaultMove(chosenCharacter);
+                    break;
+            }
+        } else
+        {
+            Debug.Log("character returned was null");
+            EndTurn();
         }
     }
 
@@ -114,9 +121,13 @@ public class AiManager : MonoBehaviour
             Character characterToAttack = null;
             foreach (TileData tile in rangeTiles)
             {
-                if (tile.character && tile.character.type == MobType.Hero)
+                if (tile.character != null && tile.character.type == MobType.Hero)
                 {
-                    if (tile.character.characterCard.currHealth < characterToAttack.characterCard.currHealth)
+                    if (characterToAttack == null)
+                    {
+                        characterToAttack = tile.character;
+                    }
+                    else if (tile.character.characterCard.currHealth < characterToAttack.characterCard.currHealth) 
                     {
                         characterToAttack = tile.character;
                     }
@@ -145,7 +156,7 @@ public class AiManager : MonoBehaviour
     private void RoamerMove(Character roamer)
     {
         Character cloestCharacter = FindClosestCharacter(roamer);
-        var rangeTiles = rangeFinding.GetRangeTiles(roamer.standingOnTile, roamer.characterCard.range, roamer.characterCard.cardType);
+        var rangeTiles = rangeFinding.GetRangeTiles(roamer.standingOnTile, roamer.characterCard.range, roamer.characterCard.cardType, true);
 
         if (roamerChasing && roamerChasing != cloestCharacter)
         {
@@ -201,6 +212,7 @@ public class AiManager : MonoBehaviour
 
         else
         {
+            Debug.Log("no move for defender");
             EndTurn();
         }
     }
@@ -327,6 +339,42 @@ public class AiManager : MonoBehaviour
         }
     }
 
+    private List<Character> FindEnemyWithinShrineRange()
+    {
+        List<Character> playerCharacters = InputManager.Instance.charactersInPlay;
+        TileData shrineTileData = GridManager.Instance.enemyShineTileData;
+
+        List<Character> attackShrineCharacters = new();
+
+        foreach (Character chara in playerCharacters)
+        {
+            int distance = pathfinding.FindPath(chara.standingOnTile, shrineTileData, chara.characterCard.cardType, 0).Count;
+            if (distance <= chara.characterCard.range)
+            {
+                attackShrineCharacters.Add(chara);
+            }
+        }
+
+        if (attackShrineCharacters.Count <= 1)
+        {
+            return attackShrineCharacters;
+        }
+
+        int lowestHealth = 999;
+        foreach (Character attackCharacter in attackShrineCharacters)
+        {
+            if (attackCharacter.characterCard.currHealth < lowestHealth)
+            {
+                lowestHealth = attackCharacter.characterCard.currHealth;
+            } else
+            {
+                attackShrineCharacters.Remove(attackCharacter);
+            }
+        }
+
+        return attackShrineCharacters;
+    }
+
     private Character FindClosestCharacter(Character character)
     {
         List<Character> playerCharacters = InputManager.Instance.charactersInPlay;
@@ -408,29 +456,72 @@ public class AiManager : MonoBehaviour
     {
         var tileData = GridManager.Instance.tileData;
 
-        Vector2Int pos = new(UnityEngine.Random.Range(gridWith - 2, gridWith - 1), UnityEngine.Random.Range(0, gridHeight - 1));
-
-        if (tileData[pos].character != null)
+        bool validTileFound = false;
+        TileData validTile = new();
+        while (!validTileFound)
         {
-            GetSpawnTile();
+            Vector2Int pos = new(UnityEngine.Random.Range(gridWith - 2, gridWith - 1), UnityEngine.Random.Range(0, gridHeight - 1));
+
+            if (tileData[pos].character == null)
+            {
+                validTileFound = true;
+                validTile = tileData[pos];
+            }
         }
 
-        return tileData[pos];
+        return validTile;
     }
 
     private Character ChooseCharacter()
     {
-        if (charactersInPlay.Count == 1)
+        List<Character> heroesInShrineRange = FindEnemyWithinShrineRange();
+        if (heroesInShrineRange.Count > 0)
         {
+            Debug.Log("oops");
             return charactersInPlay[0];
+            // should be defender move, use defender if one exists, otherwise use character in play with greatest x value
         }
 
-        foreach (Character character in charactersInPlay)
+        if (UnityEngine.Random.value < .2 && hand.Count > 0)
         {
-            // check if character in range of hero character
-
+            SpawnCharacter();
+            return null;
         }
-        return charactersInPlay[0];
+
+        else
+        {
+            List<Character> preferredCharacters = new();
+            foreach (Character character in charactersInPlay)
+            {
+                if (character.style == PlayStyle.Aggressor || character.style == PlayStyle.Roamer || character.style == PlayStyle.Default)
+                {
+                    preferredCharacters.Add(character);
+                }
+            }
+
+            if (preferredCharacters.Count == 0)
+            {
+                if (hand.Count != 0)
+                {
+                    SpawnCharacter();
+                    return null;
+                }
+                
+                return charactersInPlay[UnityEngine.Random.Range(0, preferredCharacters.Count - 1)];
+            }
+            else
+            {
+                return preferredCharacters[UnityEngine.Random.Range(0, preferredCharacters.Count - 1)];
+            }
+        }
+    }
+
+    private void SpawnCharacter()
+    {
+        Character character = CardManager.Instance.SpawnInCharacter(GetSpawnTile(), SelectCard(), true);
+        charactersInPlay.Add(character);
+
+        EndTurn();
     }
 
     private Card SelectCard()
@@ -440,7 +531,7 @@ public class AiManager : MonoBehaviour
 
         foreach (Card card in hand)
         {
-            int points = card.health + (card.range * 10) + card.attack;
+            int points = card.health + (card.range * 10) + (card.attack * 2);
             if (points > maxpoints)
             {
                 maxpoints = points;
