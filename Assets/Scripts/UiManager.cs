@@ -15,18 +15,16 @@ public class UiManager: MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        statsCanvas.enabled = false;
+        statsCanvas.enabled = false; // initially stats canvas is not visible as no character on the board is selected
     }
 
-    public void HandleCharacterStatsUI(Character character)
+    public void HandleCharacterStatsUI(Character character) // handles the showing / hiding of the stats UI
     {
-        if (statsCanvas.enabled)
-        {
-            statsCanvas.enabled = false; 
-        } else
-        {
-            statsCanvas.enabled = true;
+        statsCanvas.enabled = !statsCanvas.enabled; // will inverse the visability to on/off
 
+        if (statsCanvas.enabled) // if now enabled
+        {
+            // will set the text of the UI
             charName.text = character.name;
             healthText.text = $"{character.characterCard.currHealth} / {character.characterCard.health}";
             attackText.text = $"{character.characterCard.attack}";

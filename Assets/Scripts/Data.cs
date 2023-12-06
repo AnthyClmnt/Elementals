@@ -1,22 +1,24 @@
 using System.Collections.Generic;
 using UnityEngine;using System;
 
-public struct TileData
+// Data script stores public structs and enums used throughout 
+
+public struct TileData // stores information about tiles
 {
-    public Tile tile;
-    public Vector2Int gridLocation;
-    public bool walkable;
-    public bool shrineLocation;
-    public Character character;
-    public Shrine shrine;
+    public Tile tile; // the actual tile script which is attacted to the tile gameObject 
+    public Vector2Int gridLocation; // the grid location of the tile
+    public bool walkable; // if the tile is walkable (not earth or water)
+    public bool shrineLocation; // if the tile is a shrine location
+    public Character character; // which character is standing on the tile (null if none)
+    public Shrine shrine; // the shrine script which is on the tile (null if none)
 }
 
-public struct ShrineData
+public struct ShrineData // information about the shrine
 {
-    public Tile tile;
-    public MobType shrineType;
-    public int health;
-    public int currHealth;
+    public Tile tile; // tile script the shrine is on 
+    public MobType shrineType; // is hero or enemy (AI)
+    public int health; // health of the shrine
+    public int currHealth; // current health of the shrine
 
     public ShrineData(Tile tile, MobType shrineType)
     {
@@ -27,19 +29,11 @@ public struct ShrineData
     } 
 }
 
-public struct ScenarioState
-{
-    public List<Character> HeroCharacters;
-    public List<Character> AiCharacters;
-    public List<Card> AiCards;
-    public Shrine HeroShrine;
-    public Shrine AiShrine;
-}
-
+// stores information of the Card generated
 public struct Card
 {
-    public CardType cardType;
-    public PlayingCard card;
+    public CardType cardType; // fire, water or eaeth card?
+    public PlayingCard card; // the within hand playing card 
     public string name;
     public string description;
 
@@ -58,7 +52,7 @@ public struct Card
         this.range = range;
 
 
-        switch (cardType)
+        switch (cardType) // based on the cardType name and desciption is added 
         {
             case CardType.Fire:
                 this.name = "FireBoi";
@@ -77,19 +71,24 @@ public struct Card
         }
     }
 
+    // will return the best Attribute of the card as a percentage of the maxiumum value it can be
     private readonly int GetAttributePercent(int value, int maxValue)
     {
         return (int)Math.Round((double)value / maxValue * 100);
     }
 
+    // returs the best attribute
     public readonly Attribute GetBestAttribute(int maxAttack, int maxRange, int maxHealth)
     {
+        // gets all attributes as a percentage of the maximum they can be
         int attackPercentage = GetAttributePercent(attack, maxAttack);
         int rangePercentage = GetAttributePercent(range, maxRange);
         int healthPercentage = GetAttributePercent(health, maxHealth);
 
+        // gets the max of the three attriubtes
         int best = Mathf.Max(attackPercentage, Mathf.Max(rangePercentage, healthPercentage));
 
+        // returns the tpye of Attribute which is best
         if (best == attackPercentage)
         {
             return Attribute.Attack;
@@ -120,14 +119,14 @@ public enum Attribute
 
 public enum PlayStyle // based on best/worst attribute(s)
 {
-    Aggressor = 0, // good attack
-    Roamer = 1, // good range
+    Roamer = 0, // good range
+    Aggressor = 1, // good attack
     Defender = 2, // good health
-    Scared = 3, // poor everything 
-    Default = 4, // balanced card
+    Default = 3, // balanced card and doesn't meet criteria for any other playStyle
+    Scared = 4, // poor everything 
 }
 
-public enum GameState
+public enum GameState // controls the game state
 {
     InitialiseGrid = 0,
     InitialiseCards = 1,

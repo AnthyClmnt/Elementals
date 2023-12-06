@@ -18,17 +18,18 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        ChangeGameState(GameState.InitialiseGrid);
+        ChangeGameState(GameState.InitialiseGrid); // initial game state is to construct the grid
     }
 
-    public void ChangeGameState(GameState newState, bool pauseState = false) 
+    // changes the state of the game
+    public void ChangeGameState(GameState newState, bool pauseState = false)
     {
-        if (pauseState)
+        if (pauseState) // pause state needs to know which state to resume with
         {
             previousGameState = gameState;
         }
         
-        gameState = newState;
+        gameState = newState; // set the new game state
         switch(gameState)
         {
             case GameState.Pause:
@@ -39,15 +40,15 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.InitialiseGrid:
-                GridManager.Instance.InitialiseGrid();
+                GridManager.Instance.InitialiseGrid(); // calls the grid manager script to generate the grid
                 break;
 
             case GameState.InitialiseCards:
-                CardManager.Instance.GenerateHands();
+                CardManager.Instance.GenerateHands(); // calls the card manager to generate the hands
                 break;
 
             case GameState.HeroesTurn:
-                turnText.text = "Hero's Turn";
+                turnText.text = "Hero's Turn"; // updates the text showing who's turn it is
                 break;
 
             case GameState.EnemiesTurn:
@@ -55,12 +56,10 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.HeroWin:
-                Debug.Log("wooo hero won");
-                SceneManager.LoadScene(2);
+                SceneManager.LoadScene(2); // loads the game over/winning screen
                 break;
 
             case GameState.EnemyWin:
-                Debug.Log("booo enemy won");
                 SceneManager.LoadScene(2);
                 break;
         }

@@ -3,8 +3,9 @@ using UnityEngine.UI;
 
 public class HealthBar : MonoBehaviour
 {
-    public Slider slider;   
+    public Slider slider; // slider component used to show the current health
 
+    // initially sets the max health of the health bar
     public void SetMaxHealth(int health)
     {
         if (slider != null)
@@ -12,13 +13,10 @@ public class HealthBar : MonoBehaviour
             slider.maxValue = health;
             slider.value = health;
         }
-        else
-        {
-            Debug.Log("oh no");
-        }
     }
 
-    public void SetHealth(int newHealth)
+    // updates the health of the healthbar (when taken damage)
+    public void SetHealth(int newHealth) 
     {
         slider.value = newHealth;
     }
