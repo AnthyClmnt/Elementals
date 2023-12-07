@@ -11,9 +11,13 @@ public class GameManager : MonoBehaviour
 
     public TMP_Text turnText;
 
+    public GameDifficulty gameDifficulty;
+
     private void Awake()
     {
         Instance = this;
+
+        gameDifficulty = (GameDifficulty)PlayerPrefs.GetInt("SelectedDifficulty", 1);
     }
 
     private void Start()
@@ -52,7 +56,7 @@ public class GameManager : MonoBehaviour
                 break;
 
             case GameState.EnemiesTurn:
-                turnText.text = "Enemies' Turn";
+                turnText.text = "Enemie's Turn";
                 break;
 
             case GameState.HeroWin:

@@ -7,6 +7,6 @@ public class GameWin : MonoBehaviour
 
     public void Start()
     {
-        text.text = GameManager.Instance.gameState == GameState.HeroWin ? "You won!!" : "Oh no, enemy won!";
+        text.text = GameManager.Instance.gameState == GameState.HeroWin ? "You won!!" : "Enemy won :(";
     }
 }

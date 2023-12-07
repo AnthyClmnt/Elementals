@@ -22,9 +22,16 @@ public class CardManager : MonoBehaviour
     [SerializeField] private int minAttack, maxAttack;
     [SerializeField] private int minHealth, maxHealth;
 
+    private GameDifficulty gameDifficulty;
+    [SerializeField] private float easyMultiplier;
+    [SerializeField] private float hardMultiplier;
+
     private void Awake()
     {
         Instance = this;
+
+        gameDifficulty = GameManager.Instance.gameDifficulty;
+        Debug.Log(gameDifficulty);
     }
 
     public void GenerateHands()
@@ -38,6 +45,8 @@ public class CardManager : MonoBehaviour
     // uses Gaussian distribution to calculate the range of the card
     private int RandomGaussianRange(int min, int max)
     {
+        min = Mathf.Max(min, 1);
+
         float u1 = UnityEngine.Random.value;
         float u2 = UnityEngine.Random.value;
 
@@ -62,7 +71,7 @@ public class CardManager : MonoBehaviour
             {
                 PlayingCard playingCard = InstantiatePlayingCard(randomCardType, i); // create the playingCard gameObject
 
-                Card card = CreateCard(randomCardType, playingCard); // create the card 
+                Card card = CreateCard(randomCardType, playingCard, true); // create the card 
                 hand.Add(card); // adds card to the hero's hand
 
                 //sets the text on the playing card to the attributes
@@ -71,15 +80,38 @@ public class CardManager : MonoBehaviour
                 playingCard.SetRange(card.range.ToString());
             } else
             {
-                hand.Add(CreateCard(randomCardType, gameObject.AddComponent<PlayingCard>())); // creates and adds the card to the AI's hand
+                hand.Add(CreateCard(randomCardType, gameObject.AddComponent<PlayingCard>(), false)); // creates and adds the card to the AI's hand
             }
         }
     }
 
     // creates and returns the card 
-    private Card CreateCard(CardType cardType, PlayingCard card)
+    private Card CreateCard(CardType cardType, PlayingCard card, bool userhand)
     {
-        return new(cardType, card, GenerateStrength(minAttack, maxAttack), GenerateStrength(minHealth, maxHealth), RandomGaussianRange(minRange, maxRange));
+        if (userhand || gameDifficulty == GameDifficulty.Medium)
+        {
+            return new(cardType, card, GenerateStrength(minAttack, maxAttack), 
+                GenerateStrength(minHealth, maxHealth), 
+                RandomGaussianRange(minRange, maxRange));
+        }
+
+        if (gameDifficulty == GameDifficulty.Easy)
+        {
+            return new(cardType, card, 
+                GenerateStrength((int)(minAttack * easyMultiplier), (int)(maxAttack * easyMultiplier)), 
+                GenerateStrength((int)(minHealth * easyMultiplier), (int)(maxHealth * easyMultiplier)), 
+                RandomGaussianRange((int)(minRange * easyMultiplier), (int)(maxRange * easyMultiplier)));
+        }
+
+        else
+        {
+            Debug.Log(minAttack * hardMultiplier);
+            Debug.Log(maxAttack * hardMultiplier);
+            return new(cardType, card, 
+                GenerateStrength((int)(minAttack * hardMultiplier), (int)(maxAttack * hardMultiplier)), 
+                GenerateStrength((int)(minHealth * hardMultiplier), (int)(maxHealth * hardMultiplier)), 
+                RandomGaussianRange((int)(minRange * hardMultiplier), (int)(maxRange * hardMultiplier)));
+        }
     }
 
     // creates and returns the instantiated playing card
@@ -120,7 +152,7 @@ public class CardManager : MonoBehaviour
         character.characterCard = card;
         character.spawnTile = tile;
 
-        var style = GetPlayStyle(card); // gets the playStyle for the character (only used for AI)
+        var style = GetPlayStyle(card, !isHandAi); // gets the playStyle for the character (only used for AI)
         character.style = style;
 
         character.transform.SetParent(characterContainer.transform); 
@@ -139,9 +171,23 @@ public class CardManager : MonoBehaviour
     }
 
     // Calculates and returns the playStyle of the Character
-    private PlayStyle GetPlayStyle(Card card)
+    private PlayStyle GetPlayStyle(Card card, bool userCard)
     {
-        Attribute bestAttribute = card.GetBestAttribute(maxAttack, maxRange, maxHealth); // gets the best attribute of the card
+        Attribute bestAttribute;
+        if (userCard || gameDifficulty == GameDifficulty.Medium)
+        {
+            bestAttribute = card.GetBestAttribute(maxAttack, maxRange, maxHealth); // gets the best attribute of the card
+        } else
+        {
+            if (gameDifficulty == GameDifficulty.Easy)
+            {
+                bestAttribute = card.GetBestAttribute((int)(maxAttack * easyMultiplier), (int)(maxRange * easyMultiplier), (int)(maxHealth * easyMultiplier)); // gets the best attribute of the card
+            }
+            else
+            {
+                bestAttribute = card.GetBestAttribute((int)(maxAttack * hardMultiplier), (int)(maxRange * hardMultiplier), (int)(maxHealth * hardMultiplier)); // gets the best attribute of the card
+            }
+        }
 
         // goes through different playStyles, if a check meets the criteria this playStyle will be returned
         if (bestAttribute == Attribute.Attack && ThresholdCheck(card.attack, maxAttack))

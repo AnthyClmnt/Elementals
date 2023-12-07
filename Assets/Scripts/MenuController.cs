@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -17,5 +18,6 @@ public class MenuController : MonoBehaviour
     {
         Debug.Log("Quitting");
         Application.Quit();
+        EditorApplication.isPlaying = false;
     }
 }

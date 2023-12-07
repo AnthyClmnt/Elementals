@@ -110,6 +110,13 @@ public enum MobType
     Enemy = 1
 }
 
+public enum GameDifficulty
+{
+    Easy = 0,
+    Medium = 1,
+    Hard = 2
+}
+
 public enum Attribute
 {
     Attack = 0,
@@ -120,8 +127,8 @@ public enum Attribute
 public enum PlayStyle // based on best/worst attribute(s)
 {
     Roamer = 0, // good range
-    Aggressor = 1, // good attack
-    Defender = 2, // good health
+    Defender = 1, // good health
+    Aggressor = 2, // good attack
     Default = 3, // balanced card and doesn't meet criteria for any other playStyle
     Scared = 4, // poor everything 
 }

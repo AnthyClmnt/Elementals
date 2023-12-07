@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Character : MonoBehaviour
@@ -19,6 +20,9 @@ public class Character : MonoBehaviour
     public SpriteRenderer spriteRenderer;
 
     public Sprite enenmySprite;
+
+    public Character movingTowardsCharacter;
+    public List<TileData> pathToHeroCharacter = new();
 
     private void Awake()
     {
@@ -51,8 +55,15 @@ public class Character : MonoBehaviour
         if (characterCard.currHealth <= 0)
         {
             // call both player managers to remove character (checks if its actually their character)
-            AiManager.Instance.CharacterKilled(this);
-            InputManager.Instance.CharacterKilled(this);
+            if (type == MobType.Hero)
+            {
+                EventSystem.RaiseHeroDeath(this);
+            } 
+            else
+            {
+                EventSystem.RaiseEnemyDeath(this);
+            }
+
             Destroy(this.gameObject); // remove the character
         }
     }

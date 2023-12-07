@@ -40,6 +40,18 @@ public class AiManager : MonoBehaviour
         gridHeight = GridManager.Instance.gridHeight;
     }
 
+    private void OnEnable()
+    {
+        EventSystem.OnEnemyDeath += CharacterKilled;
+        EventSystem.OnHeroCharacterMove += CharacterMoved;
+    }
+
+    private void OnDisable()
+    {
+        EventSystem.OnEnemyDeath -= CharacterKilled;
+        EventSystem.OnHeroCharacterMove -= CharacterMoved;
+    }
+
     private void LateUpdate() // Runs once per frame
     {
         if (GameManager.Instance.gameState == GameState.EnemiesTurn) // do nothing if it isn't AI's turn
@@ -49,7 +61,7 @@ public class AiManager : MonoBehaviour
                 path = utility.MoveAlongPath(path, pathCharacter); // utility function to move along path
                 if (path.Count == 0) // if returned path now finished
                 {
-                    EndTurn(); // end the AI's turn
+                    EndTurn(); // end the AI's turn, when end of path reached
                 }
             }
             else if (coroutineRunning == false) // prevent multiple turns for AI
@@ -216,7 +228,16 @@ public class AiManager : MonoBehaviour
 
         else // otherwise move towards cloest character
         {
-            GetValidPath(roamer.standingOnTile, cloestCharacter.standingOnTile, roamer);
+            if (roamer.pathToHeroCharacter.Count > 0)
+            {
+                path = roamer.pathToHeroCharacter;
+            }
+            else
+            {
+                roamer.movingTowardsCharacter = cloestCharacter;
+                GetValidPath(roamer.standingOnTile, cloestCharacter.standingOnTile, roamer);
+                roamer.pathToHeroCharacter = path;
+            }
         }
     }
 
@@ -231,7 +252,7 @@ public class AiManager : MonoBehaviour
         var enemyCharacterTiles = rangeFinding.GetDefenderTilesWithHeroCharacters(); // tiles in enemies side of the grid, which a hero character is standing on
 
         if (enemyCharacterTiles.Count != 0)
-        {
+        {   
             var rangeTiles = rangeFinding.GetRangeTiles(defender.standingOnTile, defender.characterCard.range, defender.characterCard.cardType, true);
 
             Character characterToAttack = GetWeakestCharacter(enemyCharacterTiles); // get weakest hero character 
@@ -243,7 +264,16 @@ public class AiManager : MonoBehaviour
             }
             else // otherwise move towards hero character
             {
-                GetValidPath(defender.standingOnTile, characterToAttack.standingOnTile, defender);
+                if (defender.pathToHeroCharacter.Count > 0)
+                {
+                    path = defender.pathToHeroCharacter;
+                }
+                else
+                {
+                    defender.movingTowardsCharacter = characterToAttack;
+                    GetValidPath(defender.standingOnTile, characterToAttack.standingOnTile, defender);
+                    defender.pathToHeroCharacter = path;
+                }
             }
         } 
 
@@ -361,9 +391,14 @@ public class AiManager : MonoBehaviour
             }
 
             pathCharacter = character; // sets which character will be moved
+        } 
+        else
+        {
+            EndTurn();
         }
-
+        
         GridManager.Instance.RemoveCharacterFromTile(pathCharacter.standingOnTile.gridLocation); // remove character from start tile
+        
         this.path = path; // set path to path (will use this for lateUpdate to move the character)
     }
 
@@ -498,7 +533,7 @@ public class AiManager : MonoBehaviour
             return charactersInPlay[0]; // return chosen character
         }
 
-        if (Random.value < .3 && hand.Count > 0) // 30% of time AI will spawn a new character as long as it has card(s) in hand
+        if (Random.value < .25 && hand.Count > 0) // 25% of time AI will spawn a new character as long as it has card(s) in hand
         {
             SpawnCharacter(); // spawn chaeacter
             return null;
@@ -509,12 +544,13 @@ public class AiManager : MonoBehaviour
             List<Character> orderedCharacters = charactersInPlay
                 .OrderByDescending(c => HasEnemiesWithinRange(c))
                 .ThenBy(c => (int)c.style)
+                .ThenByDescending(c => ((float)c.characterCard.currHealth / c.characterCard.health) * 100)
                 .ToList();
 
             int index = 0;
             foreach (var c in orderedCharacters)
             {
-                Debug.Log($"position {index} name: {c.characterCard.name}, playStyle: {c.style}, location: {c.standingOnTile.gridLocation}");
+                Debug.Log($"position {index} name: {c.characterCard.name}, playStyle: {c.style}, location: {c.standingOnTile.gridLocation}, attack {c.characterCard.attack}, health {c.characterCard.health}, range {c.characterCard.range}");
                 index++;
             }
 
@@ -557,11 +593,40 @@ public class AiManager : MonoBehaviour
     }
 
     // if character's current health is <= 0, remove character from play
-    public void CharacterKilled(Character character)
+    private void CharacterKilled(Character character)
     {
-        if (charactersInPlay.Contains(character)) // function re-used for both ai and hero, so check needed to ensrue the killed character is of type AI
+        if (charactersInPlay.Contains(character)) // check to ensrue the killed character is of type AI
         {
             charactersInPlay.Remove(character);
+        }
+    }
+
+    private void CharacterMoved(Character heroCharacter)
+    {
+        foreach (Character character in charactersInPlay)
+        {
+            if (character.movingTowardsCharacter == heroCharacter)
+            {
+                var path = pathfinding.FindPath(character.standingOnTile, heroCharacter.standingOnTile, character.characterCard.cardType, character.characterCard.range);
+
+                if (path.Count > 0)
+                {
+                    // loop through path, back to front, to find first tile which is a valid tile to end on 
+                    for (int i = path.Count - 1; i >= 0; i--)
+                    {
+                        if (path[i].character == null && !path[i].shrineLocation) // if no character on tile and tile isnt a shrine location 
+                        {
+                            break; // the wanted destination is valid and can be reached
+                        }
+                        else // otherwise remove from the path
+                        {
+                            path.RemoveAt(i);
+                        }
+                    }
+                }
+
+                character.pathToHeroCharacter = path;
+            }
         }
     }
 

@@ -41,6 +41,16 @@ public class InputManager : MonoBehaviour
         path = new List<TileData>();
     }
 
+    private void OnEnable()
+    {
+        EventSystem.OnHeroDeath += CharacterKilled;
+    }
+
+    private void OnDisable()
+    {
+        EventSystem.OnHeroDeath -= CharacterKilled;
+    }
+
     private void LateUpdate() // runs once per frame
     {
         if (GameManager.Instance.gameState == GameState.HeroesTurn) // nothing is run if its not the user's turn
@@ -131,6 +141,7 @@ public class InputManager : MonoBehaviour
                 path = utility.MoveAlongPath(path, pathCharacter); // utility function for moving along path
                 if (path.Count == 0) // if the returned path now finished
                 {
+                    EventSystem.RaiseHeroCharacterMove(pathCharacter);
                     isMoving = false; // were not moving 
                     EndUserTurn(); // and go has ended
                 }
