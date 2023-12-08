@@ -35,7 +35,6 @@ public struct Card
     public CardType cardType; // fire, water or eaeth card?
     public PlayingCard card; // the within hand playing card 
     public string name;
-    public string description;
 
     public int attack;
     public int health;
@@ -56,17 +55,14 @@ public struct Card
         {
             case CardType.Fire:
                 this.name = "FireBoi";
-                this.description = "Fireboi is very hot";
                 break;
 
             case CardType.Water:
                 this.name = "WaterBoi";
-                this.description = "WaterBoi is very cool";
                 break;
 
             default:
                 this.name = "EarthBoi";
-                this.description = "EarthBoi is really boring";
                 break;
         }
     }

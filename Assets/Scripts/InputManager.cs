@@ -57,7 +57,7 @@ public class InputManager : MonoBehaviour
         {
             if (CardManager.Instance.userHand.Count == 0 && charactersInPlay.Count == 0 && path.Count == 0) // if no moves are available to the user
             {
-                EndUserTurn(); // end their turn
+                utility.EndTurn(MobType.Hero); // end their turn
             }
 
             TileData? nullableFocusedTile = GridManager.Instance.GetTileData(Camera.main.ScreenToWorldPoint(Input.mousePosition)); // gets tileData of the tile user is hovering over
@@ -66,74 +66,16 @@ public class InputManager : MonoBehaviour
                 TileData focusedTile = nullableFocusedTile.Value;
                 if (Input.GetMouseButtonDown(0)) // if user left clicks
                 {
-                    if (focusedTile.character != null && focusedTile.character.type == MobType.Hero) // tile clicked contains a hero character 
-                    {
-                        if (showingRange) // hide the range
-                        {
-                            HideRange();
-                            selectedCharacter = null; // de-select character
-                            UiManager.Instance.HandleCharacterStatsUI(focusedTile.character); // hide character stats UI
-                            showingRange = false;
-                        }
-                        else // show the range
-                        {
-                            ShowRange(focusedTile, focusedTile.character);
-                            selectedCharacter = focusedTile.character; // select character
-                            UiManager.Instance.HandleCharacterStatsUI(focusedTile.character); // show character stats UI
-                            showingRange = true;
-                        }
-
-                        startPosTile = focusedTile; // save the current clicked tile as the start position
-                    }
-
-                    else if (showingRange && rangeTilesIgnoreWalkable.Contains(focusedTile)) // if range showing and left click on tile which is within range of startPositon character
-                    {
-                        if (focusedTile.shrineLocation && focusedTile.shrine.shrineData.shrineType != MobType.Hero) // if tile is a shrine location, attack shrine
-                        {
-                            HideRange();
-                            UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
-                            focusedTile.shrine.TakeDamage(startPosTile.character.characterCard.attack);
-                            EndUserTurn();
-                        }
-                        else if (focusedTile.character && focusedTile.character.type == MobType.Enemy) // if tile is a enemies character location, attack character
-                        {
-                            HideRange();
-                            UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
-                            focusedTile.character.TakeDamage(selectedCharacter.characterCard.attack);
-                            EndUserTurn();
-                        }
-
-                    }
-                    else // if left click but not to select character or attack enemy shrine/character
-                    {
-                        Card? selectedCard = CardManager.Instance.GetSelectedCard(); // get the current selected card
-                        // if there is a selected card and the user isnt trying to spawn a character where the shrine is and there isnt already a character on the tile, spawn in new character
-                        if (selectedCard.HasValue && focusedTile.gridLocation.x < 2 && !focusedTile.shrineLocation && focusedTile.character == null)
-                        {
-                            SpawnInCharacter(focusedTile, selectedCard.Value); // spawn in character
-                            EndUserTurn();
-                        }
-                    }
+                    HandleLeftClick(focusedTile);
                 }
 
                 if (Input.GetMouseButtonDown(1)) // if right click
                 {
-                    // if we have a starting character to move with, and the right clicked focused tile doesnt contain a character and isnt a shrine location and is within range, find the path to it
-                    if (startPosTile.character != null && focusedTile.character == null && rangeTiles.Contains(focusedTile) && showingRange && !focusedTile.shrineLocation)
-                    {
-                        path = pathfinding.FindPath(startPosTile, focusedTile, startPosTile.character.characterCard.cardType); // gets the path
-                        pathCharacter = startPosTile.character; // sets which character to move when moving along the path
-
-                        if (path.Count > 0) // ensure the character isnt already at the destination
-                        {
-                            GridManager.Instance.RemoveCharacterFromTile(pathCharacter.standingOnTile.gridLocation); // remove from tileData reference of character standing on tile
-                            UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
-                        }
-                    }
+                    HandleRightClick(focusedTile);
                 }
             }
 
-            if (path.Count > 0) // aftter all above it executed if a path has been made, ending the user go will wait until it has moved along the path
+            if (path.Count > 0 && pathCharacter != null) // aftter all above it executed if a path has been made, ending the user go will wait until it has moved along the path
             {
                 isMoving = true; // path exists so a move is occuring
                 HideRange();
@@ -143,19 +85,72 @@ public class InputManager : MonoBehaviour
                 {
                     EventSystem.RaiseHeroCharacterMove(pathCharacter);
                     isMoving = false; // were not moving 
-                    EndUserTurn(); // and go has ended
+                    utility.EndTurn(MobType.Hero); // and go has ended
                 }
             }
         }
     }
 
-    private void EndUserTurn() // end the users go
+    private void HandleLeftClick(TileData focusedTile)
     {
-        if (GameManager.Instance.gameState != GameState.EnemyWin && GameManager.Instance.gameState != GameState.HeroWin)
+        if (focusedTile.character != null && focusedTile.character.type == MobType.Hero) // tile clicked contains a hero character 
         {
-            GameManager.Instance.ChangeGameState(GameState.EnemiesTurn);
+            if (showingRange) // hide the range
+            {
+                HideRange();
+            }
+            else // show the range
+            {
+                ShowRange(focusedTile, focusedTile.character);
+            }
+
+            UiManager.Instance.HandleCharacterStatsUI(focusedTile.character); // show/hide character stats UI
+            startPosTile = focusedTile; // save the current clicked tile as the start position
         }
-        
+
+        else if (showingRange && rangeTilesIgnoreWalkable.Contains(focusedTile)) // if range showing and left click on tile which is within range of startPositon character
+        {
+            HideRange(false); // hide range
+            UiManager.Instance.HandleCharacterStatsUI(focusedTile.character); // and hide stats UI
+
+            if (focusedTile.shrineLocation && focusedTile.shrine.shrineData.shrineType == MobType.Enemy) // if tile is the enenies shrine location, attack shrine
+            {
+                focusedTile.shrine.TakeDamage(startPosTile.character.characterCard.attack);
+                utility.EndTurn(MobType.Hero); // after damange to shrine or character turn is ended
+            }
+            else if (focusedTile.character && focusedTile.character.type == MobType.Enemy) // if tile is a enemies character location, attack character
+            {
+                focusedTile.character.TakeDamage(selectedCharacter.characterCard.attack);
+                utility.EndTurn(MobType.Hero); // after damange to shrine or character turn is ended
+            }
+        }
+
+        else // if left click but not to select character or attack enemy shrine/character
+        {
+            Card? selectedCard = CardManager.Instance.GetSelectedCard(); // get the current selected card
+            // if there is a selected card and the user isnt trying to spawn a character where the shrine is and there isnt already a character on the tile, spawn in new character
+            if (selectedCard.HasValue && focusedTile.gridLocation.x < 2 && !focusedTile.shrineLocation && focusedTile.character == null)
+            {
+                SpawnInCharacter(focusedTile, selectedCard.Value); // spawn in character
+                utility.EndTurn(MobType.Hero);
+            }
+        }
+    }
+
+    private void HandleRightClick(TileData focusedTile)
+    {
+        // if we have a starting character to move with, and the right clicked focused tile doesnt contain a character and isnt a shrine location and is within range, find the path to it
+        if (startPosTile.character != null && focusedTile.character == null && rangeTiles.Contains(focusedTile) && showingRange && !focusedTile.shrineLocation)
+        {
+            path = pathfinding.FindPath(startPosTile, focusedTile, startPosTile.character.characterCard.cardType); // gets the path
+            pathCharacter = startPosTile.character; // sets which character to move when moving along the path
+
+            if (path.Count > 0) // ensure the character isnt already at the destination
+            {
+                GridManager.Instance.RemoveCharacterFromTile(pathCharacter.standingOnTile.gridLocation); // remove from tileData reference of character standing on tile
+                UiManager.Instance.HandleCharacterStatsUI(focusedTile.character);
+            }
+        }
     }
     
     // highlights all tiles within range of character
@@ -169,11 +164,12 @@ public class InputManager : MonoBehaviour
             rangeTile.tile.ShowRangeTile();
         }
 
-        showingRange = true; 
+        showingRange = true;
+        selectedCharacter = character;
     }
 
     // de-highlights all tiles within range of character
-    private void HideRange()
+    private void HideRange(bool removeCharacter = true)
     {
         foreach(TileData rangeTile in rangeTiles) // already have the range tiles, just go through all of them 
         {
@@ -181,6 +177,7 @@ public class InputManager : MonoBehaviour
         }
 
         showingRange = false;
+        selectedCharacter = removeCharacter ? null: selectedCharacter; // de-select character (if needed)
     }
 
     // removes character from play when killed

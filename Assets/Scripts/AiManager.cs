@@ -15,7 +15,6 @@ public class AiManager : MonoBehaviour
     private Utility utility;
 
     private List<Character> charactersInPlay = new();
-
     private List<Card> hand = new();
 
     private Character pathCharacter;
@@ -56,12 +55,12 @@ public class AiManager : MonoBehaviour
     {
         if (GameManager.Instance.gameState == GameState.EnemiesTurn) // do nothing if it isn't AI's turn
         {
-            if (path.Count > 0) // if character is moving along path continue moving along path
+            if (path.Count > 0 && pathCharacter != null) // if character is moving along path continue moving along path
             {
                 path = utility.MoveAlongPath(path, pathCharacter); // utility function to move along path
                 if (path.Count == 0) // if returned path now finished
                 {
-                    EndTurn(); // end the AI's turn, when end of path reached
+                    utility.EndTurn(MobType.Enemy); // end the AI's turn, when end of path reached
                 }
             }
             else if (coroutineRunning == false) // prevent multiple turns for AI
@@ -92,7 +91,7 @@ public class AiManager : MonoBehaviour
 
         else if (hand.Count == 0 && charactersInPlay.Count == 0) // no available moves, end AI's turn
         {
-            EndTurn();
+            utility.EndTurn(MobType.Enemy);
         }
 
         else if (charactersInPlay.Count == 0 && hand.Count > 0) // no characters in play, AI must spawn in character
@@ -137,7 +136,7 @@ public class AiManager : MonoBehaviour
             }
         } else
         {
-            EndTurn();
+            utility.EndTurn(MobType.Enemy);
         }
     }
 
@@ -173,13 +172,13 @@ public class AiManager : MonoBehaviour
             if (characterToAttack != null) // attack character if one within range
             {
                 CharacterAttack(characterToAttack, aggressor);
-                EndTurn();
+                utility.EndTurn(MobType.Enemy);
             }
 
             else // otherwise attack shrine
             {
                 ShrineAttack(shrineLocation, aggressor.characterCard.attack);
-                EndTurn();
+                utility.EndTurn(MobType.Enemy);
             }
         }
 
@@ -212,7 +211,7 @@ public class AiManager : MonoBehaviour
             if (rangeTiles.Contains(shrineLocation)) // if within range of hero's shrine
             {
                 ShrineAttack(shrineLocation, roamer.characterCard.attack);
-                EndTurn();
+                utility.EndTurn(MobType.Enemy);
             }
             else
             {
@@ -223,7 +222,7 @@ public class AiManager : MonoBehaviour
         else if (rangeTiles.Contains(GridManager.Instance.GetTileData(cloestCharacter.standingOnTile.gridLocation).Value)) // if within range of cloest character, then attack
         {
             CharacterAttack(cloestCharacter, roamer);
-            EndTurn();
+            utility.EndTurn(MobType.Enemy);
         }
 
         else // otherwise move towards cloest character
@@ -260,7 +259,7 @@ public class AiManager : MonoBehaviour
             if (rangeTiles.Contains(GridManager.Instance.GetTileData(characterToAttack.standingOnTile.gridLocation).Value)) // attack if in range of hero character
             {
                 CharacterAttack(characterToAttack, defender);
-                EndTurn();
+                utility.EndTurn(MobType.Enemy);
             }
             else // otherwise move towards hero character
             {
@@ -313,7 +312,7 @@ public class AiManager : MonoBehaviour
                 RunAway(scaredTile);
             } else // otherwise end turn (rarely called as AI will avoid playing with scared characters)
             {
-                EndTurn();
+                utility.EndTurn(MobType.Enemy);
             }
         }
     }
@@ -333,7 +332,7 @@ public class AiManager : MonoBehaviour
         if (closestInRange != null) // if hero character in range - attack
         {
             CharacterAttack(closestInRange, balanced);
-            EndTurn();
+            utility.EndTurn(MobType.Enemy);
         }
 
         else 
@@ -342,7 +341,7 @@ public class AiManager : MonoBehaviour
             if (rangeTiles.Contains(shrineLocation)) // if within range of hero's shrine - attack shrine
             {
                 ShrineAttack(shrineLocation, balanced.characterCard.attack);
-                EndTurn();
+                utility.EndTurn(MobType.Enemy);
             }
             else // otherwise move towards hero's shrine
             {
@@ -387,14 +386,14 @@ public class AiManager : MonoBehaviour
 
             if (path.Count == 0) // if after removing invalid destinations, path count = 0; end turn
             {
-                EndTurn();
+                utility.EndTurn(MobType.Enemy);
             }
 
             pathCharacter = character; // sets which character will be moved
         } 
         else
         {
-            EndTurn();
+            utility.EndTurn(MobType.Enemy);
         }
         
         GridManager.Instance.RemoveCharacterFromTile(pathCharacter.standingOnTile.gridLocation); // remove character from start tile
@@ -570,7 +569,7 @@ public class AiManager : MonoBehaviour
         Character character = CardManager.Instance.SpawnInCharacter(GetSpawnTile(), SelectCard(), true);
         charactersInPlay.Add(character);
 
-        EndTurn();
+        utility.EndTurn(MobType.Enemy);
     }
 
     // Selects a card to play with, (chooses best cards first)
@@ -628,11 +627,5 @@ public class AiManager : MonoBehaviour
                 character.pathToHeroCharacter = path;
             }
         }
-    }
-
-    // changes the state of the game to end the AI's turn
-    private void EndTurn()
-    {
-        GameManager.Instance.ChangeGameState(GameState.HeroesTurn);
     }
 }

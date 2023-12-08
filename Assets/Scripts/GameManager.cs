@@ -17,7 +17,7 @@ public class GameManager : MonoBehaviour
     {
         Instance = this;
 
-        gameDifficulty = (GameDifficulty)PlayerPrefs.GetInt("SelectedDifficulty", 1);
+        gameDifficulty = (GameDifficulty)PlayerPrefs.GetInt("SelectedDifficulty", 1); // gets and set the game difficulty 
     }
 
     private void Start()

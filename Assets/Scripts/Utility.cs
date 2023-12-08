@@ -31,4 +31,12 @@ public class Utility
         pathCharacter.GetComponent<SpriteRenderer>().sortingOrder = tile.tile.GetComponent<SpriteRenderer>().sortingOrder; // maintains sorting order
         pathCharacter.standingOnTile = tile; // sets character to be standig on tile
     }
+
+    public void EndTurn(MobType TurnToEnd)
+    {
+        if (GameManager.Instance.gameState != GameState.EnemyWin && GameManager.Instance.gameState != GameState.HeroWin)
+        {
+            GameManager.Instance.ChangeGameState(TurnToEnd == MobType.Hero ? GameState.EnemiesTurn : GameState.HeroesTurn);
+        }
+    }
 }

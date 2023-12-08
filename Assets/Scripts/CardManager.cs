@@ -31,7 +31,6 @@ public class CardManager : MonoBehaviour
         Instance = this;
 
         gameDifficulty = GameManager.Instance.gameDifficulty;
-        Debug.Log(gameDifficulty);
     }
 
     public void GenerateHands()
@@ -61,7 +60,7 @@ public class CardManager : MonoBehaviour
         return UnityEngine.Random.Range(min , max + 1);
     }
 
-    void GenerateHand(List<Card> hand, bool userHand = false)
+    private void GenerateHand(List<Card> hand, bool userHand = false)
     {
         for (int i = 0; i < handSize; i++) // loops through until hand is of size handSize
         {
@@ -88,6 +87,7 @@ public class CardManager : MonoBehaviour
     // creates and returns the card 
     private Card CreateCard(CardType cardType, PlayingCard card, bool userhand)
     {
+        // user hand stats dont change regardless of difficulty and AI's stats remain default on medium difficulty
         if (userhand || gameDifficulty == GameDifficulty.Medium)
         {
             return new(cardType, card, GenerateStrength(minAttack, maxAttack), 
@@ -95,7 +95,7 @@ public class CardManager : MonoBehaviour
                 RandomGaussianRange(minRange, maxRange));
         }
 
-        if (gameDifficulty == GameDifficulty.Easy)
+        if (gameDifficulty == GameDifficulty.Easy) // if easy, use the easy multiplier value for the attributes
         {
             return new(cardType, card, 
                 GenerateStrength((int)(minAttack * easyMultiplier), (int)(maxAttack * easyMultiplier)), 
@@ -103,10 +103,8 @@ public class CardManager : MonoBehaviour
                 RandomGaussianRange((int)(minRange * easyMultiplier), (int)(maxRange * easyMultiplier)));
         }
 
-        else
+        else // must be hard difficulty, use the hard multiplier value for the attributes
         {
-            Debug.Log(minAttack * hardMultiplier);
-            Debug.Log(maxAttack * hardMultiplier);
             return new(cardType, card, 
                 GenerateStrength((int)(minAttack * hardMultiplier), (int)(maxAttack * hardMultiplier)), 
                 GenerateStrength((int)(minHealth * hardMultiplier), (int)(maxHealth * hardMultiplier)), 
