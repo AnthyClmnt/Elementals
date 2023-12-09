@@ -24,6 +24,10 @@ public class AiManager : MonoBehaviour
 
     private bool coroutineRunning = false;
 
+    private Character latestHeroCharacterAttack;
+    private Character latestCharacterToAttack;
+    private float blockChance = .1f;
+
     private void Awake()
     {
         Instance = this; 
@@ -39,13 +43,13 @@ public class AiManager : MonoBehaviour
         gridHeight = GridManager.Instance.gridHeight;
     }
 
-    private void OnEnable()
+    private void OnEnable() // subscribe to any needed events and delegate them to the related methods
     {
         EventSystem.OnEnemyDeath += CharacterKilled;
         EventSystem.OnHeroCharacterMove += CharacterMoved;
     }
 
-    private void OnDisable()
+    private void OnDisable() // unsubscribing from all events when script becomes in-active
     {
         EventSystem.OnEnemyDeath -= CharacterKilled;
         EventSystem.OnHeroCharacterMove -= CharacterMoved;
@@ -177,7 +181,7 @@ public class AiManager : MonoBehaviour
 
             else // otherwise attack shrine
             {
-                ShrineAttack(shrineLocation, aggressor.characterCard.attack);
+                ShrineAttack(shrineLocation.shrine, aggressor.characterCard.attack);
                 utility.EndTurn(MobType.Enemy);
             }
         }
@@ -210,7 +214,7 @@ public class AiManager : MonoBehaviour
             var shrineLocation = GridManager.Instance.heroShineTileData; 
             if (rangeTiles.Contains(shrineLocation)) // if within range of hero's shrine
             {
-                ShrineAttack(shrineLocation, roamer.characterCard.attack);
+                ShrineAttack(shrineLocation.shrine, roamer.characterCard.attack);
                 utility.EndTurn(MobType.Enemy);
             }
             else
@@ -227,15 +231,15 @@ public class AiManager : MonoBehaviour
 
         else // otherwise move towards cloest character
         {
-            if (roamer.pathToHeroCharacter.Count > 0)
+            if (roamer.pathToHeroCharacter.Count > 0 && InputManager.Instance.charactersInPlay.Contains(roamer.movingTowardsCharacter)) // if pre-determined path has been calcualted from event emmit of hero character movement (ensures it still exists, i.e. not been killed)
             {
-                path = roamer.pathToHeroCharacter;
+                path = roamer.pathToHeroCharacter; // set the path to the pre-determined 
             }
             else
             {
-                roamer.movingTowardsCharacter = cloestCharacter;
+                // otherwise use path finding to find path to character and set the chosen roamer character to listen for this hero character
+                roamer.movingTowardsCharacter = cloestCharacter; 
                 GetValidPath(roamer.standingOnTile, cloestCharacter.standingOnTile, roamer);
-                roamer.pathToHeroCharacter = path;
             }
         }
     }
@@ -340,7 +344,7 @@ public class AiManager : MonoBehaviour
             var shrineLocation = GridManager.Instance.heroShineTileData;
             if (rangeTiles.Contains(shrineLocation)) // if within range of hero's shrine - attack shrine
             {
-                ShrineAttack(shrineLocation, balanced.characterCard.attack);
+                ShrineAttack(shrineLocation.shrine, balanced.characterCard.attack);
                 utility.EndTurn(MobType.Enemy);
             }
             else // otherwise move towards hero's shrine
@@ -353,13 +357,24 @@ public class AiManager : MonoBehaviour
     // Deals damage to hero's character 
     private void CharacterAttack(Character victim, Character attacker)
     {
-        victim.TakeDamage(attacker.characterCard.attack);
+        if (victim == latestHeroCharacterAttack && attacker == latestCharacterToAttack)
+        {
+            blockChance = Mathf.Min(.7f, blockChance * Random.Range(1.05f, 1.25f));
+        } else
+        {
+            latestHeroCharacterAttack = victim;
+            latestCharacterToAttack = attacker;
+
+            blockChance = .1f;
+        }
+
+        victim.TakeDamage(Random.value < blockChance ? 0 : attacker.characterCard.attack);
     }
 
     // Deals damage to hero's shrine
-    private void ShrineAttack(TileData shrineTile, int damage)
+    private void ShrineAttack(Shrine shrine, int damage)
     {
-        shrineTile.shrine.TakeDamage(damage);
+        shrine.TakeDamage(damage);
     }
 
     /* Uses pathfinding to get path from start -> destination 
@@ -428,12 +443,12 @@ public class AiManager : MonoBehaviour
 
     /* Finds cloest hero character to character, optional range parameter which ensures cloest character search is fixed within characters range 
     */
-    private Character FindClosestCharacter(Character character, int range = 999)
+    private Character FindClosestCharacter(Character character, int range = int.MaxValue)
     {
         List<Character> playerCharacters = InputManager.Instance.charactersInPlay; // list of hero characters in play
 
         Character? closestCharacter = null;
-        int closestDistance = 999; // default to impossible cloest in order for first character to be considered
+        int closestDistance = int.MaxValue; // default to impossible cloest in order for first character to be considered
 
         foreach (Character chara in playerCharacters) 
         {
@@ -462,7 +477,7 @@ public class AiManager : MonoBehaviour
         }
 
         Character selected = null;
-        int weakest = 9999; // impossible current health
+        int weakest = int.MaxValue; // impossible current health weakest
         foreach (TileData tileData in charactersTileData)
         {
             if (tileData.character.characterCard.currHealth < weakest) // if current character has lower health than previous lowest
@@ -532,7 +547,7 @@ public class AiManager : MonoBehaviour
             return charactersInPlay[0]; // return chosen character
         }
 
-        if (Random.value < .25 && hand.Count > 0) // 25% of time AI will spawn a new character as long as it has card(s) in hand
+        if (Random.value < .2 && hand.Count > 0) // 20% of time AI will spawn a new character as long as it has card(s) in hand
         {
             SpawnCharacter(); // spawn chaeacter
             return null;
@@ -540,25 +555,26 @@ public class AiManager : MonoBehaviour
 
         else
         {
+            // order the characters in a list from most preferred to selct to least preferred
             List<Character> orderedCharacters = charactersInPlay
-                .OrderByDescending(c => HasEnemiesWithinRange(c))
-                .ThenBy(c => (int)c.style)
-                .ThenByDescending(c => ((float)c.characterCard.currHealth / c.characterCard.health) * 100)
+                .OrderByDescending(c => HasEnemiesWithinRange(c)) // firstly order by characters who have hero in range
+                .ThenBy(c => (int)c.style) // then by prefered playStyles
+                .ThenByDescending(c => c.characterCard.currHealth) // finally, by the current health
                 .ToList();
 
-            int index = 0;
-            foreach (var c in orderedCharacters)
-            {
-                Debug.Log($"position {index} name: {c.characterCard.name}, playStyle: {c.style}, location: {c.standingOnTile.gridLocation}, attack {c.characterCard.attack}, health {c.characterCard.health}, range {c.characterCard.range}");
-                index++;
-            }
-
+            // if the most preferred character is of type Default, Defender or Scared, Ai will prefer to spawn in another character (as long as it can)
             if ((orderedCharacters[0].style == PlayStyle.Default || orderedCharacters[0].style == PlayStyle.Defender || orderedCharacters[0].style == PlayStyle.Scared) && hand.Count > 0)
             {
                 SpawnCharacter();
                 return null;
             }
 
+            if (blockChance >= .35f && Random.value > .4f && orderedCharacters[0] == latestCharacterToAttack)
+            {
+                orderedCharacters.RemoveAt(0);
+            }
+
+            // will return the most preffered character to play with
             return orderedCharacters[0];
         }
     }
@@ -600,13 +616,16 @@ public class AiManager : MonoBehaviour
         }
     }
 
+    // used to update path stored in AI's characters when hero character chasing has been moved
     private void CharacterMoved(Character heroCharacter)
     {
+        // go through all characters in play
         foreach (Character character in charactersInPlay)
         {
+            // if the character has a focus on the moved character, we update its path to follow rather than re-calculating each time
             if (character.movingTowardsCharacter == heroCharacter)
             {
-                var path = pathfinding.FindPath(character.standingOnTile, heroCharacter.standingOnTile, character.characterCard.cardType, character.characterCard.range);
+                var path = pathfinding.FindPath(character.standingOnTile, heroCharacter.standingOnTile, character.characterCard.cardType, character.characterCard.range); // find the path
 
                 if (path.Count > 0)
                 {
@@ -624,6 +643,7 @@ public class AiManager : MonoBehaviour
                     }
                 }
 
+                // update the path on the AI's character which will be used to pathfind towards when chosen
                 character.pathToHeroCharacter = path;
             }
         }

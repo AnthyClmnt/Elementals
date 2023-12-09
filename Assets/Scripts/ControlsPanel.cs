@@ -6,13 +6,13 @@ public class ControlsPanel : MonoBehaviour
 
     public void OpenPanel()
     {
-        GameManager.Instance.ChangeGameState(GameState.Pause, true);
+        EventSystem.RaiseGameStateChange(GameState.Pause);
         panel.SetActive(true);
     }
 
     public void ClosePanel()
     {
         panel.SetActive(false);
-        GameManager.Instance.ChangeGameState(GameState.Resume);
+        EventSystem.RaiseGameStateChange(GameState.Resume);
     }
 }

@@ -8,6 +8,8 @@ public class EventSystem : MonoBehaviour
 
     public static Action<Character> OnHeroCharacterMove;
 
+    public static Action<GameState> OnGameStateChange;
+
     public static void RaiseHeroDeath(Character character)
     {
         OnHeroDeath?.Invoke(character);
@@ -21,5 +23,10 @@ public class EventSystem : MonoBehaviour
     public static void RaiseHeroCharacterMove(Character character)
     {
         OnHeroCharacterMove?.Invoke(character);
+    }
+
+    public static void RaiseGameStateChange(GameState gameState)
+    {
+        OnGameStateChange?.Invoke(gameState);
     }
 }

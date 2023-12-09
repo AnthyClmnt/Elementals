@@ -23,6 +23,7 @@ Each character is randomly given 3 attributes.
 ## 🚨 Important
 
 - Please start from then "Menu" scene if not loaded by default
+- Please also play the game in QHD (2560 x 1440) 
 
 ## Controls
 

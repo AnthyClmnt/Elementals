@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class Utility
@@ -32,11 +33,12 @@ public class Utility
         pathCharacter.standingOnTile = tile; // sets character to be standig on tile
     }
 
+    // used to end turn of current player, TurnToEnd takes MobType: Hero or Enemy
     public void EndTurn(MobType TurnToEnd)
     {
-        if (GameManager.Instance.gameState != GameState.EnemyWin && GameManager.Instance.gameState != GameState.HeroWin)
+        if (GameManager.Instance.gameState != GameState.EnemyWin && GameManager.Instance.gameState != GameState.HeroWin) // ensure the game hasn't transitioned to an end of game state
         {
-            GameManager.Instance.ChangeGameState(TurnToEnd == MobType.Hero ? GameState.EnemiesTurn : GameState.HeroesTurn);
+            EventSystem.RaiseGameStateChange(TurnToEnd == MobType.Hero ? GameState.EnemiesTurn : GameState.HeroesTurn); // ends turn for given player 
         }
     }
 }

@@ -38,7 +38,8 @@ public class CardManager : MonoBehaviour
         // generates the user and Ai's hand before starting the game (giving turn to hero)
         GenerateHand(userHand, true); 
         GenerateHand(aiHand);
-        GameManager.Instance.ChangeGameState(GameState.HeroesTurn);
+
+        EventSystem.RaiseGameStateChange(GameState.HeroesTurn); // moving on game state and begin the game  
     }
 
     // uses Gaussian distribution to calculate the range of the card

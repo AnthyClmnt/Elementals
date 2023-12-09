@@ -20,6 +20,10 @@ public class InputManager : MonoBehaviour
 
     public Character selectedCharacter;
 
+    private Character latestAiCharacterAttack;
+    private Character latestCharacterToAttack;
+    private float blockChance = .1f;
+
     public List<Character> charactersInPlay = new();
 
     private bool showingRange = false;
@@ -120,7 +124,7 @@ public class InputManager : MonoBehaviour
             }
             else if (focusedTile.character && focusedTile.character.type == MobType.Enemy) // if tile is a enemies character location, attack character
             {
-                focusedTile.character.TakeDamage(selectedCharacter.characterCard.attack);
+                CharacterAttack(focusedTile.character, selectedCharacter);
                 utility.EndTurn(MobType.Hero); // after damange to shrine or character turn is ended
             }
         }
@@ -152,7 +156,25 @@ public class InputManager : MonoBehaviour
             }
         }
     }
-    
+
+    // Deals damage to Ai's character 
+    private void CharacterAttack(Character victim, Character attacker)
+    {
+        if (victim == latestAiCharacterAttack && attacker == latestCharacterToAttack)
+        {
+            blockChance = Mathf.Min(.7f, blockChance * Random.Range(1.05f, 1.25f));
+        }
+        else
+        {
+            latestAiCharacterAttack = victim;
+            latestCharacterToAttack = attacker;
+
+            blockChance = .1f;
+        }
+
+        victim.TakeDamage(Random.value < blockChance ? 0 : attacker.characterCard.attack);
+    }
+
     // highlights all tiles within range of character
     private void ShowRange(TileData tile, Character character)
     {
@@ -181,7 +203,7 @@ public class InputManager : MonoBehaviour
     }
 
     // removes character from play when killed
-    public void CharacterKilled(Character character)
+    private void CharacterKilled(Character character)
     {
         if (charactersInPlay.Contains(character)) // ensures character killed is a hero's character
         {

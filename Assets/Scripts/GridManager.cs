@@ -31,7 +31,8 @@ public class GridManager : MonoBehaviour
         GenerateGrid(); // firtly generates the grid
         CreateShrines(); // then generates the hero and enemy shrines
         PositionCamera(); // positions the game camera
-        GameManager.Instance.ChangeGameState(GameState.InitialiseCards); // when finished passed game state to creating the hands
+
+        EventSystem.RaiseGameStateChange(GameState.InitialiseCards); // when finished passed game state to creating the hands
     }
 
     // easier to move the camera to centre the grid, rather than offsetting the tiles of the grid 

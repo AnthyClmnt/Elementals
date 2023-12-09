@@ -20,15 +20,25 @@ public class GameManager : MonoBehaviour
         gameDifficulty = (GameDifficulty)PlayerPrefs.GetInt("SelectedDifficulty", 1); // gets and set the game difficulty 
     }
 
+    private void OnEnable() // subscribe to any needed events and delegate them to the related methods
+    {
+        EventSystem.OnGameStateChange += ChangeGameState;
+    }
+
+    private void OnDisable() // unsubscribing from all events when script becomes in-active
+    {
+        EventSystem.OnGameStateChange -= ChangeGameState;
+    }
+
     private void Start()
     {
         ChangeGameState(GameState.InitialiseGrid); // initial game state is to construct the grid
     }
 
     // changes the state of the game
-    public void ChangeGameState(GameState newState, bool pauseState = false)
+    private void ChangeGameState(GameState newState)
     {
-        if (pauseState) // pause state needs to know which state to resume with
+        if (newState == GameState.Pause) // pause state needs to know which state to resume with
         {
             previousGameState = gameState;
         }

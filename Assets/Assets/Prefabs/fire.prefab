@@ -177,8 +177,10 @@ MonoBehaviour:
   style: 0
   healthBar: {fileID: 1280049776471595041}
   attack: {fileID: 1305188596664670284, guid: 2fc5924cefe819049b42408be459d812, type: 3}
+  blockSprite: {fileID: 21300000, guid: a36038009668c1d49b7a0d352e739519, type: 3}
   spriteRenderer: {fileID: 8841490041501124759}
   enenmySprite: {fileID: 21300000, guid: 0b93b4e2ab40bbb4aa4c4a69f13b05f1, type: 3}
+  movingTowardsCharacter: {fileID: 0}
 --- !u!1 &2725244634929289275
 GameObject:
   m_ObjectHideFlags: 0

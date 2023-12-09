@@ -35,7 +35,7 @@ public class Shrine : MonoBehaviour
         if (shrineData.currHealth <= 0)
         {
             // depending on which MobType the shrine is determines whos won 
-            GameManager.Instance.ChangeGameState(shrineData.shrineType == MobType.Hero ? GameState.EnemyWin : GameState.HeroWin); 
+            EventSystem.RaiseGameStateChange(shrineData.shrineType == MobType.Hero ? GameState.EnemyWin : GameState.HeroWin);
         }
     }
 }

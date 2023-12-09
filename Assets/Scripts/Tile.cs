@@ -58,9 +58,12 @@ public class Tile : MonoBehaviour
         {
             exited = false; // controls the coroutine break functionality
 
-            TileData tile = (TileData)GridManager.Instance.GetTileData(Camera.main.ScreenToWorldPoint(Input.mousePosition)); // gets the tile user is hovering over from vector position of mouse
+            TileData? tile = GridManager.Instance.GetTileData(Camera.main.ScreenToWorldPoint(Input.mousePosition)); // gets the tile user is hovering over from vector position of mouse
 
-            StartCoroutine(Highlight(IsTileWalkable(tile))); // begins the coroutine
+            if(tile.HasValue)
+            {
+                StartCoroutine(Highlight(IsTileWalkable(tile.Value))); // begins the coroutine
+            }
         }   
     }
 
