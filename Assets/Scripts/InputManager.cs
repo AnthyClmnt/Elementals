@@ -157,22 +157,23 @@ public class InputManager : MonoBehaviour
         }
     }
 
-    // Deals damage to Ai's character 
+    // Deals damage to Ai's character, and determines if attack is blocked
     private void CharacterAttack(Character victim, Character attacker)
     {
-        if (victim == latestAiCharacterAttack && attacker == latestCharacterToAttack)
+        if (victim == latestAiCharacterAttack && attacker == latestCharacterToAttack) // if the latest hero character to attack is the attacker and the latest Ai character to be attacked is the victim, the block multiplier must grow
         {
-            blockChance = Mathf.Min(.7f, blockChance * Random.Range(1.05f, 1.25f));
+            blockChance = Mathf.Min(.7f, blockChance * Random.Range(1.05f, 1.25f)); // ensure the block chance never goes above 70%, and increases the block chance randomly between 5% and 25%
         }
         else
         {
+            // if its not a repeated attack, updates the latest
             latestAiCharacterAttack = victim;
             latestCharacterToAttack = attacker;
 
-            blockChance = .1f;
+            blockChance = .1f; // and resets the block chance
         }
 
-        victim.TakeDamage(Random.value < blockChance ? 0 : attacker.characterCard.attack);
+        victim.TakeDamage(Random.value < blockChance ? 0 : attacker.characterCard.attack); // randomly decide if the attack will be blocked, if so attack is 0 otherwise attack attribute is used
     }
 
     // highlights all tiles within range of character

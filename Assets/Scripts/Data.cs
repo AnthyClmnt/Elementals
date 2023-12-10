@@ -37,8 +37,8 @@ public struct Card
     public string name;
 
     public int attack;
-    public int health;
-    public int currHealth;
+    public int health; // the maximum/starting health 
+    public int currHealth; 
     public int range;
 
     public Card(CardType cardType, PlayingCard card, int attack, int health, int range)
@@ -51,7 +51,7 @@ public struct Card
         this.range = range;
 
 
-        switch (cardType) // based on the cardType name and desciption is added 
+        switch (cardType) // based on the cardType name is added 
         {
             case CardType.Fire:
                 this.name = "FireBoi";
@@ -100,7 +100,7 @@ public struct Card
     }
 }
 
-public enum MobType
+public enum MobType // used to distinguish between player and AI (better practices)
 {
     Hero = 0,
     Enemy = 1

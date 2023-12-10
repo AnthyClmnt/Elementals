@@ -25,6 +25,7 @@ Each character is randomly given 3 attributes.
 ## 🚨 Important
 
 - Please start from then "Menu" scene if not loaded by default
+- Please also play the game in QHD (2560 x 1440)
 
 ## Controls
 
@@ -63,6 +64,13 @@ The Ai manager decides and executes the AI's moves. Once per frame it checks if 
 If no pre-defined moves are chosen, the AI manager will caculate which move to execute. To decide which character to make a move with, it ranks the available characters, firstly by if they are within range of hero characters, then by their playstyle and finally by the current health percentage. The first item in the ordered list is the best character to choose. if this character doesn't have a prefered playStyle, the AI would rather spawn in another character (as long as it has one in their hand).
 
 With the chosen character, the playStyle determines what will be executed. Full information is available in the source code.
+
+### 🚫 Attack Blocks
+The game also utilises stochastic behaviour to improve the turn based combat system. Without a blockChance, combat in the game essentially boils down to which of the two characters has a the highest health, the best attack and most imporantly who attacks first. 
+
+The block chance of an attack increased every time either the player or the Ai performs the same attack in a row. This increase also intensifies the longer the repeated attacks occur, up to a maxium of 70% block chance. If a player chooses another charatcer to attack with or attacks a different opponent character, this block chance is reset to 10%.
+
+This randomeness allows for more stategy for both the player and the Ai in which next more is best, it also stops combat being just about who is stronger and who attacks first, by penalising players who continue to perform the same attack. 
 
 ### 🎮 PlayStyles
 PlayStyles give indiviual AI characters unique movement and decision making. There are 5 playStyles:

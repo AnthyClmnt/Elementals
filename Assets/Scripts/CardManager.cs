@@ -30,7 +30,7 @@ public class CardManager : MonoBehaviour
     {
         Instance = this;
 
-        gameDifficulty = GameManager.Instance.gameDifficulty;
+        gameDifficulty = GameManager.Instance.gameDifficulty; // gets the game difficulty 
     }
 
     public void GenerateHands()
@@ -45,20 +45,20 @@ public class CardManager : MonoBehaviour
     // uses Gaussian distribution to calculate the range of the card
     private int RandomGaussianRange(int min, int max)
     {
-        min = Mathf.Max(min, 1);
+        min = Mathf.Max(min, 1); // ensure the min value is at least 1 (avoid range of 0 = implayable character)
 
         float u1 = UnityEngine.Random.value;
         float u2 = UnityEngine.Random.value;
 
-        float z0 = Mathf.Sqrt(-2f * Mathf.Log(u1)) * Mathf.Cos(2f * Mathf.PI * u2);
-
-        return Mathf.Clamp(Mathf.RoundToInt(4 + z0 * 1.5f), min, max);
+        // Box-muller agorithm to ensure standard normal distribution
+        float z0 = Mathf.Sqrt(-2f * Mathf.Log(u1)) * Mathf.Cos(2f * Mathf.PI * u2); 
+        return Mathf.Clamp(Mathf.RoundToInt(4 + z0 * 1.5f), min, max); 
     }
 
     // Generates random strenght for either health or attack damange
     private int GenerateStrength(int min, int max)
     {
-        return UnityEngine.Random.Range(min , max + 1);
+        return UnityEngine.Random.Range(min , max + 1); // randomly generates the attack and health of the character card
     }
 
     private void GenerateHand(List<Card> hand, bool userHand = false)

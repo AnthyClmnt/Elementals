@@ -26,17 +26,17 @@ public class Pathfinding
 
             if(currentTile.tile == destination.tile) // if we have reached destination, stop traversing the grid
             {
-                return GetPathList(start, destination, cardType, range); // get the final path
+                return GetPathList(start, destination, range); // get the final path
             }
 
-            foreach( TileData tile in GetNeighbourTiles(currentTile)) // loop through all neigouring tiles of the current tile
+            foreach(TileData tile in GetNeighbourTiles(currentTile)) // loop through all neigouring tiles of the current tile
             {
                 // check if tile is walkable, or if the character being moved is a water card and the tile being looked at is of type water
                 // also ensure our cloest list doesn't contain this tile, as if it does we know it doesn't help in finding the best path
-                if((tile.walkable || (tile.tile.tileType == TileType.Water && cardType == CardType.Water)) && !closedList.Contains(tile))
+                if (tile.tile.IsTileWalkable(tile, cardType) && !closedList.Contains(tile))
                 {
                     // calculate the G and H costs for the tile
-                    tile.tile.G = GetDistanceCost(start, tile); 
+                    tile.tile.G = GetDistanceCost(start, tile);
                     tile.tile.H = GetDistanceCost(destination, tile);
                     tile.tile.E = avoidOpponent ? GetEnemyCost(tile, heroCharacters) : 0; // nullifies the E cost to 0 if werent not avoiding opponents
 
@@ -46,9 +46,6 @@ public class Pathfinding
                     {
                         openList.Add(tile);
                     }
-                } else
-                {
-                    continue; // continue if not a valid tile or already disgarded in the cloesed list
                 }
             }
         }
@@ -57,7 +54,7 @@ public class Pathfinding
     }
 
     // constucts and returns the final path 
-    private List<TileData> GetPathList(TileData start, TileData destination, CardType cardType, int range)
+    private List<TileData> GetPathList(TileData start, TileData destination, int range)
     {
         List<TileData> finishedList = new();
 

@@ -72,7 +72,7 @@ public class Character : MonoBehaviour
         Vector3 pos = new(transform.position.x, transform.position.y, -6);
         var attObject = Instantiate(attack, pos, Quaternion.identity); // creates the attack sprite gameObject
 
-        if (damageAmount == 0)
+        if (damageAmount == 0) // if attack is blocked (damage = 0) swap out the attack sprite for the block sprite
         {
             SpriteRenderer spriteRenderer = attObject.GetComponent<SpriteRenderer>();
             spriteRenderer.sprite = blockSprite;

@@ -354,21 +354,22 @@ public class AiManager : MonoBehaviour
         }
     }
 
-    // Deals damage to hero's character 
+    // Deals damage to hero's character, and determines if attack is blocked
     private void CharacterAttack(Character victim, Character attacker)
     {
-        if (victim == latestHeroCharacterAttack && attacker == latestCharacterToAttack)
+        if (victim == latestHeroCharacterAttack && attacker == latestCharacterToAttack) // if the latest Ai character to attack is the attacker and the latest hero character to be attacked is the victim, the block multiplier must grow
         {
-            blockChance = Mathf.Min(.7f, blockChance * Random.Range(1.05f, 1.25f));
+            blockChance = Mathf.Min(.7f, blockChance * Random.Range(1.05f, 1.25f)); // ensure the block chance never goes above 70%, and increases the block chance randomly between 5% and 25%
         } else
         {
+            // if its not a repeated attack, updates the latest
             latestHeroCharacterAttack = victim;
             latestCharacterToAttack = attacker;
 
-            blockChance = .1f;
+            blockChance = .1f; // and resets the block chance
         }
 
-        victim.TakeDamage(Random.value < blockChance ? 0 : attacker.characterCard.attack);
+        victim.TakeDamage(Random.value < blockChance ? 0 : attacker.characterCard.attack); // randomly decide if the attack will be blocked, if so attack is 0 otherwise attack attribute is used
     }
 
     // Deals damage to hero's shrine
@@ -569,9 +570,12 @@ public class AiManager : MonoBehaviour
                 return null;
             }
 
-            if (blockChance >= .35f && Random.value > .4f && orderedCharacters[0] == latestCharacterToAttack)
+            /* Ai will choose 2nd most preffered character if the current blockChance is greater than half the max block chance, and the most preffered character is the latest character to attack 
+               (also some random, 40% of the time will take their chances and risk a blocked attack)
+            */
+            if (blockChance >= .35f && Random.value > .4f && orderedCharacters[0] == latestCharacterToAttack) 
             {
-                orderedCharacters.RemoveAt(0);
+                orderedCharacters.RemoveAt(0); // remove the most preffered character from this move choice
             }
 
             // will return the most preffered character to play with

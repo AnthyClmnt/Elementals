@@ -20,7 +20,7 @@ public class Tile : MonoBehaviour
     public int F { 
         get 
         { 
-            return G + H + Mathf.RoundToInt(E); 
+            return G + H + Mathf.RoundToInt(E); // E cost rounded to int 
         } 
     }
 
@@ -39,8 +39,14 @@ public class Tile : MonoBehaviour
     }
 
     // checks if tile is walkable returning true/false
-    private bool IsTileWalkable(TileData tile)
+    public bool IsTileWalkable(TileData tile, CardType? cardType = null )
     {
+        if (cardType.HasValue) // if cardType is passed, we consider this in the bool decision
+        {
+            // check is walkable or if tile is water and character is type water
+            return tile.walkable || tile.tile.tileType == TileType.Water && cardType.Value == CardType.Water; 
+        }
+
         Character selectedCharacter = InputManager.Instance.selectedCharacter;
 
         if(selectedCharacter != null)
