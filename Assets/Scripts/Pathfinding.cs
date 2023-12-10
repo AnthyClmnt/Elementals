@@ -104,36 +104,18 @@ public class Pathfinding
     {
         var tiles = GridManager.Instance.tileData; // gets access to all tileData
 
-        List<TileData> neighbours = new();
-
-        // tile above 
-        Vector2Int checkLocation = new(currentTile.gridLocation.x + 1, currentTile.gridLocation.y);
-        if(tiles.ContainsKey(checkLocation)) // used dictionary in order to check if the tile were looking for exits
-        {
-            neighbours.Add(tiles[checkLocation]); // if it does we add it to the neighbours list, ready for it to be checked
-        }
-
-        // tile below
-        checkLocation = new(currentTile.gridLocation.x - 1, currentTile.gridLocation.y);
-        if (tiles.ContainsKey(checkLocation))
-        {
-            neighbours.Add(tiles[checkLocation]);
-        }
-
-        // tile to the right 
-        checkLocation = new(currentTile.gridLocation.x, currentTile.gridLocation.y + 1);
-        if (tiles.ContainsKey(checkLocation))
-        {
-            neighbours.Add(tiles[checkLocation]);
-        }
-
-        // tile to the left
-        checkLocation = new(currentTile.gridLocation.x, currentTile.gridLocation.y - 1);
-        if (tiles.ContainsKey(checkLocation))
-        {
-            neighbours.Add(tiles[checkLocation]);
-        }
-
-        return neighbours;
+        List<Vector2Int> neighboursToCheck = new List<Vector2Int> // constructs list of vectors to check
+        { 
+            new(currentTile.gridLocation.x + 1, currentTile.gridLocation.y), // above
+            new(currentTile.gridLocation.x - 1, currentTile.gridLocation.y), // below
+            new(currentTile.gridLocation.x, currentTile.gridLocation.y + 1), // right
+            new(currentTile.gridLocation.x, currentTile.gridLocation.y - 1) // left
+        };
+        
+        // retutns the TileData struct for valid gridLocations
+        return neighboursToCheck 
+            .Where(gridLocation => tiles.ContainsKey(gridLocation)) // check the vector is a tile in the grid
+            .Select(gridLocation => tiles[gridLocation]) // select the TileData struct
+            .ToList(); // convert to list
     }
 }
