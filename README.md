@@ -1,6 +1,7 @@
 # CSC3232 Project - Elementals
 
 ### Git Repository: (https://github.com/AnthyClmnt/Elementals/)
+### Unity version: 2022.3.1.10f1
 
 ## Game Brief 
 Elementals is a Player vs Ai turn based game, based on the three major elements: Fire🔥, Water🌊 and Earth🌿. The turn based game has two main objectives:
